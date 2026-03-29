@@ -9,32 +9,48 @@
 </div>
 
 <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('upload')">📤 Upload</button>
-    <button class="tab-btn" onclick="switchTab('template')">📋 Template</button>
-    <button class="tab-btn" onclick="switchTab('history')">📜 History</button>
+    <button class="tab-btn active" onclick="switchTab(event, 'upload')">
+        <span class="tab-icon"></span>
+        <span>Upload</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab(event, 'template')">
+        <span class="tab-icon"></span>
+        <span>Template</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab(event, 'history')">
+        <span class="tab-icon"></span>
+        <span>History</span>
+    </button>
 </div>
 
 <!-- Upload Tab -->
 <div id="upload" class="tab-content active">
     <section class="card">
-        <h2>Upload CSV File</h2>
-        
-        <div class="upload-zone" id="uploadZone">
-            <div class="upload-icon">📁</div>
-            <h3>Drag & drop your file here</h3>
-            <p>or</p>
-            <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                Select File
-            </button>
-            <input type="file" id="fileInput" accept=".csv" style="display:none;">
-            <p class="upload-info">Supported: CSV</p>
+        <div class="card-header">
+            <h2>Upload CSV File</h2>
+            <p class="section-desc">Import student data to update records and calculate risk assessments</p>
         </div>
         
-        <div id="uploadProgress" style="display:none;">
+        <div class="upload-zone" id="uploadZone">
+            <svg class="upload-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <h3>Drag and drop your file</h3>
+            <p class="or-text">or</p>
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                Browse Files
+            </button>
+            <input type="file" id="fileInput" accept=".csv" style="display:none;">
+            <p class="upload-info">CSV format only • Max 10MB</p>
+        </div>
+        
+        <div id="uploadProgress" class="upload-progress" style="display:none;">
             <div class="progress-bar">
-                <div id="progressFill"></div>
+                <div id="progressFill" class="progress-fill"></div>
             </div>
-            <p id="progressText">Uploading...</p>
+            <p id="progressText" class="progress-text">Uploading...</p>
         </div>
         
         <div id="uploadResult" style="display:none;"></div>
@@ -42,109 +58,771 @@
 </div>
 
 <!-- Template Tab -->
-<div id="template" class="tab-content">
+<div id="template" class="tab-content" style="display:none;">
     <section class="card">
-        <h2>Download Template</h2>
-        <p>Download the CSV template to ensure your data format is correct.</p>
-        <a href="/api/download-template" class="btn btn-primary">📥 Download Template</a>
+        <div class="card-header">
+            <h2>CSV Template</h2>
+            <p class="section-desc">Download the template and learn about required columns</p>
+        </div>
         
-        <h3 style="margin-top: 30px;">Column Descriptions</h3>
-        <table class="template-table">
-            <tr>
-                <td><strong>id</strong></td>
-                <td>Unique student ID</td>
-            </tr>
-            <tr>
-                <td><strong>name</strong></td>
-                <td>Student's full name</td>
-            </tr>
-            <tr>
-                <td><strong>address</strong></td>
-                <td>City/address</td>
-            </tr>
-            <tr>
-                <td><strong>email</strong></td>
-                <td>Student email</td>
-            </tr>
-            <tr>
-                <td><strong>grade</strong></td>
-                <td>Current grade (9-12)</td>
-            </tr>
-            <tr>
-                <td><strong>tt</strong></td>
-                <td>Travel time to school (hours)</td>
-            </tr>
-            <tr>
-                <td><strong>fo/mo</strong></td>
-                <td>Father's/Mother's occupation</td>
-            </tr>
-            <tr>
-                <td><strong>fq/mq</strong></td>
-                <td>Father's/Mother's education level</td>
-            </tr>
-            <tr>
-                <td><strong>ias</strong></td>
-                <td>Internal Assessment Score (0-100)</td>
-            </tr>
-            <tr>
-                <td><strong>attendance</strong></td>
-                <td>Attendance percentage</td>
-            </tr>
-            <tr>
-                <td><strong>fee_late</strong></td>
-                <td>Payment status (Paid/Overdue)</td>
-            </tr>
-            <tr>
-                <td><strong>teacher_rating</strong></td>
-                <td>Teacher's rating (1-5)</td>
-            </tr>
-            <tr>
-                <td><strong>nf</strong></td>
-                <td>Number of close friends</td>
-            </tr>
-            <tr>
-                <td><strong>previous_visits</strong></td>
-                <td>Counseling visits count</td>
-            </tr>
-        </table>
+        <div class="template-section">
+            <h3>Download Template</h3>
+            <p>Get started with our pre-formatted CSV template:</p>
+            <a href="/api/download-template" class="btn btn-primary">Download Template</a>
+        </div>
+        
+        <div class="template-section">
+            <h3>Column Reference</h3>
+            <p>These are the required and optional columns:</p>
+            
+            <div class="columns-grid">
+                <div class="column-group">
+                    <h4>Personal Information</h4>
+                    <table class="ref-table">
+                        <tr>
+                            <td class="col-name">id</td>
+                            <td class="col-desc">Unique student ID (number)</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">name</td>
+                            <td class="col-desc">Student's full name</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">email</td>
+                            <td class="col-desc">Student email address</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">address</td>
+                            <td class="col-desc">City or home address</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">grade</td>
+                            <td class="col-desc">Grade level (9, 10, 11, 12)</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="column-group">
+                    <h4>Family Information</h4>
+                    <table class="ref-table">
+                        <tr>
+                            <td class="col-name">fo</td>
+                            <td class="col-desc">Father's occupation</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">fq</td>
+                            <td class="col-desc">Father's education level</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">mo</td>
+                            <td class="col-desc">Mother's occupation</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">mq</td>
+                            <td class="col-desc">Mother's education level</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">tt</td>
+                            <td class="col-desc">Travel time to school (hours)</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="column-group">
+                    <h4>Academic Performance</h4>
+                    <table class="ref-table">
+                        <tr>
+                            <td class="col-name">ias</td>
+                            <td class="col-desc">Internal Assessment Score (0-100)</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">twp</td>
+                            <td class="col-desc">Previous grade score</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">tnp</td>
+                            <td class="col-desc">Two grades ago score</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">arr</td>
+                            <td class="col-desc">Exam failure status (Y/N)</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="column-group">
+                    <h4>Attendance & Engagement</h4>
+                    <table class="ref-table">
+                        <tr>
+                            <td class="col-name">attendance</td>
+                            <td class="col-desc">Attendance percentage (0-100)</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">teacher_rating</td>
+                            <td class="col-desc">Teacher rating (1-5 scale)</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">nf</td>
+                            <td class="col-desc">Number of close friends</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">fee_late</td>
+                            <td class="col-desc">Fee payment status</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="column-group">
+                    <h4>Health & Support</h4>
+                    <table class="ref-table">
+                        <tr>
+                            <td class="col-name">previous_visits</td>
+                            <td class="col-desc">Counseling visits count</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">summary_self_check_in</td>
+                            <td class="col-desc">Mental health summary</td>
+                        </tr>
+                        <tr>
+                            <td class="col-name">teacher_notes</td>
+                            <td class="col-desc">Teacher notes/observations</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="template-tips">
+                <h4>Tips for Successful Upload</h4>
+                <ul>
+                    <li>Ensure all required columns are present</li>
+                    <li>Use consistent data formats (e.g., grades as numbers)</li>
+                    <li>Remove any empty rows or columns</li>
+                    <li>Check for duplicate student IDs</li>
+                    <li>Attendance should be 0-100, not 0-1</li>
+                </ul>
+            </div>
+        </div>
     </section>
 </div>
 
 <!-- History Tab -->
-<div id="history" class="tab-content">
+<div id="history" class="tab-content" style="display:none;">
     <section class="card">
-        <h2>Upload History</h2>
-        <table class="history-table">
-            <thead>
-                <tr>
-                    <th>File Name</th>
-                    <th>Uploaded By</th>
-                    <th>Records</th>
-                    <th>Success</th>
-                    <th>Errors</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for upload in history %}
-                <tr>
-                    <td>{{ upload.file_name }}</td>
-                    <td>{{ upload.uploaded_by }}</td>
-                    <td>{{ upload.record_count }}</td>
-                    <td><span class="badge badge-success">{{ upload.success_count }}</span></td>
-                    <td><span class="badge badge-danger">{{ upload.error_count }}</span></td>
-                    <td>{{ upload.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card-header">
+            <h2>Upload History</h2>
+            <p class="section-desc">View previous data uploads and their status</p>
+        </div>
+        
+        {% if history %}
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Uploaded By</th>
+                            <th>Records</th>
+                            <th>Success</th>
+                            <th>Errors</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for upload in history %}
+                        <tr>
+                            <td><code>{{ upload.file_name }}</code></td>
+                            <td>{{ upload.uploaded_by }}</td>
+                            <td><strong>{{ upload.record_count }}</strong></td>
+                            <td><span class="badge badge-success">{{ upload.success_count }}</span></td>
+                            <td><span class="badge badge-error">{{ upload.error_count }}</span></td>
+                            <td>{{ upload.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p> No upload history yet</p>
+            </div>
+        {% endif %}
     </section>
 </div>
 
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ===================================
+   Upload Header
+   =================================== */
+
+.upload-header {
+    margin-bottom: 32px;
+}
+
+.upload-header h1 {
+    font-size: 28px;
+    color: #1f2937;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.upload-header p {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ===================================
+   Tabs
+   =================================== */
+
+.tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 14px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.tab-icon {
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+.tab-btn:hover {
+    color: #1f2937;
+}
+
+.tab-btn:hover .tab-icon {
+    opacity: 0.9;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tab-btn.active .tab-icon {
+    opacity: 1;
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===================================
+   Card
+   =================================== */
+
+.card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h2 {
+    font-size: 20px;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+}
+
+.section-desc {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* ===================================
+   Upload Zone
+   =================================== */
+
+.upload-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+    cursor: pointer;
+}
+
+.upload-zone:hover {
+    border-color: var(--primary);
+    background: #f3f4f6;
+}
+
+.upload-zone.dragover {
+    border-color: var(--primary);
+    background: #eff6ff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.upload-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    stroke: #6b7280;
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.6;
+}
+
+.upload-zone:hover .upload-icon {
+    opacity: 0.8;
+    stroke: var(--primary);
+}
+
+.upload-zone h3 {
+    font-size: 18px;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+}
+
+.or-text {
+    color: #9ca3af;
+    margin: 12px 0;
+    font-size: 13px;
+}
+
+.upload-info {
+    margin-top: 12px;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+/* ===================================
+   Progress
+   =================================== */
+
+.upload-progress {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    width: 0%;
+    animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+    0% { width: 0%; }
+    50% { width: 80%; }
+    100% { width: 100%; }
+}
+
+.progress-text {
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* ===================================
+   Upload Result
+   =================================== */
+
+.alert {
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 20px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-success {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.alert-success strong {
+    color: #15803d;
+}
+
+.alert-error {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+}
+
+.alert-error strong {
+    color: #7f1d1d;
+}
+
+.alert p {
+    margin: 8px 0 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ===================================
+   Template Section
+   =================================== */
+
+.template-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.template-section:last-child {
+    border-bottom: none;
+}
+
+.template-section h3 {
+    font-size: 18px;
+    color: #1f2937;
+    margin: 0 0 12px 0;
+    font-weight: 700;
+}
+
+.template-section p {
+    color: #6b7280;
+    font-size: 13px;
+    margin: 0 0 12px 0;
+}
+
+/* ===================================
+   Columns Grid
+   =================================== */
+
+.columns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.column-group {
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.column-group h4 {
+    font-size: 14px;
+    color: var(--primary);
+    margin: 0 0 12px 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ref-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ref-table tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ref-table tr:last-child {
+    border-bottom: none;
+}
+
+.ref-table td {
+    padding: 8px 0;
+    font-size: 12px;
+}
+
+.col-name {
+    color: #1f2937;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    width: 30%;
+}
+
+.col-desc {
+    color: #6b7280;
+    width: 70%;
+}
+
+/* ===================================
+   Template Tips
+   =================================== */
+
+.template-tips {
+    background: #fffbeb;
+    border: 1px solid #fde047;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.template-tips h4 {
+    font-size: 14px;
+    color: #92400e;
+    margin: 0 0 12px 0;
+    font-weight: 700;
+}
+
+.template-tips ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.template-tips li {
+    color: #78350f;
+    font-size: 13px;
+    padding: 6px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.template-tips li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #d97706;
+    font-weight: bold;
+}
+
+/* ===================================
+   History Table
+   =================================== */
+
+.table-container {
+    overflow-x: auto;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.history-table thead {
+    background: #f9fafb;
+}
+
+.history-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.history-table tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+}
+
+.history-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.history-table code {
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: #6b7280;
+}
+
+/* ===================================
+   Badges
+   =================================== */
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    min-width: 40px;
+}
+
+.badge-success {
+    background: #10b981;
+}
+
+.badge-error {
+    background: #ef4444;
+}
+
+/* ===================================
+   Empty State
+   =================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.empty-state p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* ===================================
+   Buttons
+   =================================== */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* ===================================
+   Responsive
+   =================================== */
+
+@media (max-width: 768px) {
+    .tabs {
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        padding: 12px 16px;
+        white-space: nowrap;
+    }
+
+    .upload-zone {
+        padding: 30px 16px;
+    }
+
+    .columns-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .history-table {
+        font-size: 12px;
+    }
+
+    .history-table thead th,
+    .history-table tbody td {
+        padding: 10px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload-header h1 {
+        font-size: 24px;
+    }
+
+    .tab-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .tab-icon {
+        font-size: 16px;
+    }
+
+    .upload-zone h3 {
+        font-size: 16px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
 const uploadZone = document.getElementById('uploadZone');
 const fileInput = document.getElementById('fileInput');
 
+// Drag and drop events
 uploadZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadZone.classList.add('dragover');
@@ -166,6 +844,18 @@ fileInput.addEventListener('change', (e) => {
 });
 
 function handleFileUpload(file) {
+    // Validate file type
+    if (!file.name.endsWith('.csv')) {
+        showResult('error', 'Please upload a CSV file', '');
+        return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+        showResult('error', 'File is too large', 'Maximum file size is 10MB');
+        return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     
@@ -179,39 +869,54 @@ function handleFileUpload(file) {
     .then(r => r.json())
     .then(data => {
         document.getElementById('uploadProgress').style.display = 'none';
-        document.getElementById('uploadResult').style.display = 'block';
         
         if (data.success) {
-            document.getElementById('uploadResult').innerHTML = `
-                <div class="alert alert-success">
-                    <strong>✓ Upload Successful!</strong>
-                    <p>${data.message}</p>
-                    <p>Processed: ${data.processed} | Failed: ${data.failed}</p>
-                </div>
-            `;
+            showResult('success', 
+                '✓ Upload Successful!',
+                `${data.message}<br>New: ${data.new_students} | Updated: ${data.updated_students} | Errors: ${data.errors}`
+            );
         } else {
-            document.getElementById('uploadResult').innerHTML = `
-                <div class="alert alert-error">
-                    <strong>✗ Upload Failed</strong>
-                    <p>${data.error}</p>
-                </div>
-            `;
+            showResult('error', 
+                '✗ Upload Failed',
+                data.error || 'An error occurred during upload'
+            );
         }
     })
     .catch(err => {
         document.getElementById('uploadProgress').style.display = 'none';
-        document.getElementById('uploadResult').innerHTML = `
-            <div class="alert alert-error">Error: ${err}</div>
-        `;
+        showResult('error', 'Error', err.message);
     });
 }
 
-function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+function showResult(type, title, message) {
+    const resultDiv = document.getElementById('uploadResult');
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
     
-    document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
+    resultDiv.innerHTML = `
+        <div class="alert ${alertClass}">
+            <strong>${title}</strong>
+            <p>${message}</p>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function switchTab(event, tabName) {
+    event.preventDefault();
+    
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // Remove active from all buttons
+    document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName).style.display = 'block';
+    event.target.closest('.tab-btn').classList.add('active');
 }
 </script>
 {% endblock %}

@@ -192,11 +192,11 @@ def _suggest_action(risk_level, snapshot):
     base_action = ''
     
     if risk_level == 'HIGH':
-        base_action = '🚨 URGENT: Schedule immediate meeting with student and parents'
+        base_action = ' URGENT: Schedule immediate meeting with student and parents'
     elif risk_level == 'MEDIUM':
-        base_action = '⚠️ Close monitoring recommended - Schedule weekly check-ins'
+        base_action = ' Close monitoring recommended - Schedule weekly check-ins'
     else:
-        base_action = '✅ Continue regular monitoring'
+        base_action = ' Continue regular monitoring'
     
     if snapshot:
         attendance = float(snapshot.attendance) if snapshot.attendance is not None else 0
@@ -221,15 +221,15 @@ def analyze_student_needs(student_data):
     
     if risk_score >= 70 or risk_level == 'high':
         analysis['risk_status'] = 'HIGH_RISK'
-        analysis['urgency'] = '🚨 CRITICAL'
+        analysis['urgency'] = ' CRITICAL'
         analysis['risk_description'] = f"Critical concern - Risk score {risk_score}/100"
     elif risk_score >= 40 or risk_level == 'medium':
         analysis['risk_status'] = 'MEDIUM_RISK'
-        analysis['urgency'] = '⚠️ MODERATE'
+        analysis['urgency'] = ' MODERATE'
         analysis['risk_description'] = f"Moderate concern - Risk score {risk_score}/100"
     else:
         analysis['risk_status'] = 'LOW_RISK'
-        analysis['urgency'] = '✅ LOW'
+        analysis['urgency'] = ' LOW'
         analysis['risk_description'] = f"Low concern - Risk score {risk_score}/100"
     
     attendance = student_data.get('attendance_rate', 0)
@@ -241,7 +241,7 @@ def analyze_student_needs(student_data):
         analysis['attendance_issue'] = f"🟡 Low attendance ({attendance}%) - Needs monitoring"
     else:
         analysis['needs_attendance_support'] = False
-        analysis['attendance_issue'] = f"✅ Good attendance ({attendance}%)"
+        analysis['attendance_issue'] = f"🟢 Good attendance ({attendance}%)"
     
     teacher_rating = student_data.get('teacher_rating', 0)
     if teacher_rating < 2:
@@ -249,7 +249,7 @@ def analyze_student_needs(student_data):
     elif teacher_rating < 3:
         analysis['teacher_concern'] = f"🟡 Below average rating ({teacher_rating}/5) - Performance concerns"
     else:
-        analysis['teacher_concern'] = f"✅ Good teacher rating ({teacher_rating}/5) - Positive relationships"
+        analysis['teacher_concern'] = f"🟢 Good teacher rating ({teacher_rating}/5) - Positive relationships"
     
     key_signals = student_data.get('key_signals', [])
     analysis['has_warning_signals'] = len(key_signals) > 0
@@ -257,15 +257,15 @@ def analyze_student_needs(student_data):
     
     help_types = []
     if analysis.get('needs_attendance_support'):
-        help_types.append("📚 ATTENDANCE_INTERVENTION")
+        help_types.append(" ATTENDANCE_INTERVENTION")
     if risk_score >= 70:
-        help_types.append("❤️ MENTAL_HEALTH_SUPPORT")
+        help_types.append(" MENTAL_HEALTH_SUPPORT")
     if analysis.get('has_warning_signals'):
-        help_types.append("💬 COUNSELING_SUPPORT")
+        help_types.append(" COUNSELING_SUPPORT")
     if teacher_rating < 3:
-        help_types.append("📖 ACADEMIC_SUPPORT")
+        help_types.append(" ACADEMIC_SUPPORT")
     if not help_types:
-        help_types.append("👁️ MONITORING")
+        help_types.append(" MONITORING")
     
     analysis['help_types'] = help_types
     

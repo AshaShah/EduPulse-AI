@@ -9,16 +9,31 @@
 </div>
 
 <div class="stats-grid">
+    <!-- Total Students -->
     <div class="stat-card total-students">
-        <div class="stat-icon">👥</div>
+        <div class="stat-icon-bg">
+            <svg class="stat-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        </div>
         <div class="stat-content">
             <h3>Total Students</h3>
             <p class="stat-value">{{ stats.total_students }}</p>
         </div>
     </div>
     
+    <!-- High Risk -->
     <div class="stat-card high-risk">
-        <div class="stat-icon">⚠️</div>
+        <div class="stat-icon-bg">
+            <svg class="stat-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05l-8.47-14.14a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        </div>
         <div class="stat-content">
             <h3>High Risk</h3>
             <p class="stat-value">{{ stats.high_risk_count }}</p>
@@ -26,16 +41,26 @@
         </div>
     </div>
     
+    <!-- Average Attendance -->
     <div class="stat-card avg-attendance">
-        <div class="stat-icon">📍</div>
+        <div class="stat-icon-bg">
+            <svg class="stat-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+        </div>
         <div class="stat-content">
             <h3>Avg Attendance</h3>
             <p class="stat-value">{{ stats.avg_attendance }}%</p>
         </div>
     </div>
     
+    <!-- Average Rating -->
     <div class="stat-card avg-rating">
-        <div class="stat-icon">⭐</div>
+        <div class="stat-icon-bg">
+            <svg class="stat-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="12 2 15.09 10.26 23.77 11.46 17.88 17.01 19.54 25.63 12 21.35 4.46 25.63 6.12 17.01 0.23 11.46 8.91 10.26 12 2"/>
+            </svg>
+        </div>
         <div class="stat-content">
             <h3>Avg Rating</h3>
             <p class="stat-value">{{ stats.avg_rating }}/5.0</p>
@@ -56,37 +81,369 @@
         </select>
     </div>
     
-    <table class="students-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Grade</th>
-                <th>Risk Level</th>
-                <th>Score</th>
-                <th>Pattern</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="students-list">
-            {% for student in students %}
-            <tr class="student-row" data-student-id="{{ student.id }}">
-                <td><strong>{{ student.name }}</strong></td>
-                <td>{{ student.grade }}</td>
-                <td>
-                    <span class="badge badge-{{ student.risk_level | lower }}">
-                        {{ student.risk_level }}
-                    </span>
-                </td>
-                <td>{{ student.risk_score }}</td>
-                <td>{{ student.pattern[:50] }}...</td>
-                <td>
-                    <a href="/student/{{ student.id }}" class="btn-small">View</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table class="students-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    <th>Risk Level</th>
+                    <th>Risk Score</th>
+                    <th>Pattern</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="students-list">
+                {% for student in students %}
+                <tr class="student-row" data-student-id="{{ student.id }}">
+                    <td><strong>{{ student.name }}</strong></td>
+                    <td>{{ student.grade }}</td>
+                    <td>
+                        <span class="badge badge-{{ student.risk_level | lower }}">
+                            {{ student.risk_level }}
+                        </span>
+                    </td>
+                    <td>{{ student.risk_score }}</td>
+                    <td>{{ student.pattern[:50] if student.pattern else 'N/A' }}...</td>
+                    <td>
+                        <a href="/student/{{ student.id }}" class="btn-small btn-view">View Profile</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<style>
+.dashboard-header {
+    margin-bottom: 32px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    color: #1f2937;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.dashboard-header p {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    border-color: #d1d5db;
+}
+
+.stat-icon-bg {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon {
+    width: 28px;
+    height: 28px;
+    stroke: #6b7280;
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+    opacity: 0.8;
+    stroke: #1f2937;
+}
+
+.stat-card.high-risk .stat-icon-bg {
+    background: #fef2f2;
+}
+
+.stat-card.high-risk .stat-icon {
+    stroke: #dc2626;
+}
+
+.stat-card.avg-attendance .stat-icon-bg {
+    background: #f0fdf4;
+}
+
+.stat-card.avg-attendance .stat-icon {
+    stroke: #16a34a;
+}
+
+.stat-card.avg-rating .stat-icon-bg {
+    background: #fffbeb;
+}
+
+.stat-card.avg-rating .stat-icon {
+    stroke: #d97706;
+    fill: #d97706;
+    opacity: 0.5;
+}
+
+.stat-card.avg-rating:hover .stat-icon {
+    opacity: 0.7;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-content h3 {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 6px 0;
+}
+
+.stat-percentage {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+/* At-Risk Section */
+.at-risk-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.at-risk-section h2 {
+    font-size: 20px;
+    color: #1f2937;
+    margin: 0 0 20px 0;
+    font-weight: 700;
+}
+
+/* Search & Filter */
+.search-filter {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.search-input,
+.filter-select {
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    background: white;
+    color: #1f2937;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: #d1d5db;
+    box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.05);
+}
+
+/* Table */
+.table-container {
+    overflow-x: auto;
+}
+
+.students-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.students-table thead {
+    background: #f9fafb;
+}
+
+.students-table thead th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.students-table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+}
+
+.students-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.students-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.students-table strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-high {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+.badge-medium {
+    background: #fef3c7;
+    color: #78350f;
+}
+
+.badge-low {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* Buttons */
+.btn-small {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-view {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-view:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .stat-icon-bg {
+        width: 50px;
+        height: 50px;
+    }
+
+    .stat-icon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .search-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .students-table {
+        font-size: 12px;
+    }
+
+    .students-table thead th,
+    .students-table tbody td {
+        padding: 10px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .at-risk-section {
+        padding: 16px;
+    }
+
+    .at-risk-section h2 {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    .stat-card {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .stat-icon-bg {
+        width: 48px;
+        height: 48px;
+    }
+}
+</style>
 
 <script>
 document.getElementById('student-search').addEventListener('keyup', searchStudents);
@@ -102,21 +459,39 @@ function searchStudents() {
             const tbody = document.getElementById('students-list');
             tbody.innerHTML = '';
             
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af; padding: 20px;">No students found</td></tr>';
+                return;
+            }
+            
             data.forEach(student => {
                 const riskClass = student.risk_level.toLowerCase();
+                const pattern = (student.pattern || 'N/A').substring(0, 50);
                 const row = `
                     <tr class="student-row">
-                        <td><strong>${student.name}</strong></td>
+                        <td><strong>${escapeHtml(student.name)}</strong></td>
                         <td>${student.grade}</td>
                         <td><span class="badge badge-${riskClass}">${student.risk_level}</span></td>
                         <td>${student.risk_score}</td>
-                        <td>${(student.pattern || 'N/A').substring(0, 50)}...</td>
-                        <td><a href="/student/${student.id}" class="btn-small">View</a></td>
+                        <td>${escapeHtml(pattern)}${pattern.length >= 50 ? '...' : ''}</td>
+                        <td><a href="/student/${student.id}" class="btn-small btn-view">View Profile</a></td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
             });
+        })
+        .catch(err => {
+            console.error('Search error:', err);
+            const tbody = document.getElementById('students-list');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 20px;">Error loading students</td></tr>';
         });
 }
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 </script>
+
 {% endblock %}
