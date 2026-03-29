@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:4facfe,100:00f2fe&height=200&section=header&text=EduPulse%20AI&fontSize=60&fontColor=ffffff&fontAlignY=38&desc=Student%20Risk%20Assessment%20%26%20Performance%20Analytics&descAlignY=58&descSize=18&animation=fadeIn" width="100%"/>
+<img src="/app/static/images/logo.svg" width="200"/>
 
 [![Hackathon](https://img.shields.io/badge/🏆%20Hackathon%20Project-Nepali%20Leaders%20Network-ff6b6b?style=for-the-badge)](https://github.com)
 [![Flask](https://img.shields.io/badge/Flask-2.3.3-blue?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
