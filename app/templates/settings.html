@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Settings & Profile{% endblock %}
+
+{% block content %}
+<div class="account-settings-wrapper">
+    <h1 class="settings-title">Account Settings</h1>
+    <div class="settings-tabs">
+        <button class="tab active">Password</button>
+        <button class="tab">Communication</button>
+        <button class="tab">Notifications</button>
+        <button class="tab">Privacy</button>
+    </div>
+    <div class="settings-content-grid">
+        <div class="settings-card">
+            <h2>Password Security</h2>
+            <div class="password-section">
+                <h3>Change Password</h3>
+                <p class="password-requirements">Password must be at least 8 characters long and include uppercase letters, lowercase letters and numbers.</p>
+                <form method="POST" action="/settings/change-password">
+                    <div class="form-group">
+                        <label for="old_password">Current Password <span class="required">*</span></label>
+                        <input type="password" id="old_password" name="old_password" placeholder="Enter your current password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_password">New Password <span class="required">*</span></label>
+                        <input type="password" id="new_password" name="new_password" placeholder="Enter your new password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password <span class="required">*</span></label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your new password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </form>
+                <hr>
+                <div class="mfa-section">
+                    <h4>Enable Multifactor Authentication (MFA)</h4>
+                    <p class="mfa-desc">Multi-factor Authentication (MFA) is an authentication method that makes your account more secure.</p>
+                    <button class="btn btn-outline" disabled>Enable MFA</button>
+                </div>
+            </div>
+        </div>
+        <div class="settings-side-card">
+            <div class="profile-progress">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: 35%; background: #ef4444;"></div>
+                </div>
+                <div class="profile-progress-label">Your profile is incomplete</div>
+                <p class="profile-progress-desc">We need to know your working rights, degree, location, and career interests to connect you with roles. Completing these fields gives you a real chance to match with employer partners.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.account-settings-wrapper {
+    max-width: 1100px;
+    margin: 40px auto;
+    background: none;
+    padding: 0 16px;
+}
+.settings-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+.settings-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+.tab {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 24px 24px 0 0;
+    padding: 10px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.tab.active, .tab:focus {
+    background: #fff;
+    color: #2563eb;
+    border-bottom: 2px solid #2563eb;
+}
+.settings-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+}
+.settings-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 36px 32px 32px 32px;
+    min-width: 350px;
+}
+.settings-card h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+.password-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.password-requirements {
+    font-size: 0.98rem;
+    color: #64748b;
+    margin-bottom: 18px;
+}
+.form-group {
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+}
+.form-group label {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+    font-size: 1rem;
+}
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f8fafc;
+    color: #0f172a;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #fff;
+}
+.required {
+    color: #ef4444;
+    font-size: 1.1em;
+}
+.btn.btn-primary {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 22px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+.btn.btn-primary:hover {
+    background: #1e40af;
+}
+.btn.btn-outline {
+    background: #fff;
+    color: #2563eb;
+    border: 2px solid #2563eb;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+.btn.btn-outline:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.btn.btn-outline:hover:not(:disabled) {
+    background: #2563eb;
+    color: #fff;
+}
+.mfa-section {
+    margin-top: 32px;
+}
+.mfa-section h4 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.mfa-desc {
+    color: #64748b;
+    font-size: 0.98rem;
+    margin-bottom: 10px;
+}
+.settings-side-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 32px 28px;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+.profile-progress {
+    width: 100%;
+}
+.progress-bar-bg {
+    width: 100%;
+    height: 18px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.4s;
+}
+.profile-progress-label {
+    font-weight: 600;
+    color: #ef4444;
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+.profile-progress-desc {
+    color: #64748b;
+    font-size: 0.98rem;
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

@@ -43,6 +43,8 @@ def profile(student_id):
     if snapshot:
         student_data.update({
             'ias': snapshot.ias,
+            'twp': snapshot.twp,
+            'tnp': snapshot.tnp,
             'attendance': snapshot.attendance,
             'fee_status': snapshot.fee_status,
             'teacher_rating': snapshot.teacher_rating,

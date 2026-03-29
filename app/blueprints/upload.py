@@ -83,14 +83,14 @@ def upload_csv():
                     twp=float(row.get('twp', 0)),
                     tnp=float(row.get('tnp', 0)),
                     arr=row.get('arr', 'N'),
-                    attendance=float(row.get('attendance', 0)),
+                    attendance=float(row.get('attendance %', 0)),
                     fee_status=row.get('fee_late', 'Paid'),
                     teacher_rating=float(row.get('teacher_rating', 3)),
                     teacher_notes=row.get('teacher_notes', ''),
                     num_friends=int(row.get('nf', 0)),
                     counseling_visits=int(row.get('previous_visits', 0)),
                     mental_health_summary=row.get('summary_self_check_in', ''),
-                    attendance_json=json.dumps([float(row.get('attendance', 0))]),
+                    attendance_json=json.dumps([float(row.get('attendance %', 0))]),
                     raw_data=row.to_json()
                 )
                 db.session.add(snapshot)

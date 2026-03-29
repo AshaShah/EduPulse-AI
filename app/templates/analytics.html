@@ -73,17 +73,17 @@
         <div class="search-form">
             <input type="text" id="search-name" placeholder="Student name..." class="form-input">
             <select id="search-grade" class="form-input">
-                <option>All Grades</option>
-                <option>9</option>
-                <option>10</option>
-                <option>11</option>
-                <option>12</option>
+                <option value="all">All Grades</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
             </select>
             <select id="search-risk" class="form-input">
-                <option>All Risk Levels</option>
-                <option>High</option>
-                <option>Medium</option>
-                <option>Low</option>
+                <option value="all">All Risk Levels</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
             </select>
             <button class="btn btn-primary" id="btn-search">Search</button>
         </div>
@@ -391,9 +391,13 @@ function performSearch() {
     
     let query = '';
     if (name) query += `?q=${encodeURIComponent(name)}`;
-    if (risk !== 'All Risk Levels') {
+    if (grade !== 'all') {
         const separator = query ? '&' : '?';
-        query += `${separator}risk=${risk.toLowerCase()}`;
+        query += `${separator}grade=${encodeURIComponent(grade)}`;
+    }
+    if (risk !== 'all') {
+        const separator = query ? '&' : '?';
+        query += `${separator}risk=${risk}`;
     }
     
     fetch(`/api/search-students${query}`)
