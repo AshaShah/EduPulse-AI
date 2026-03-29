@@ -22,124 +22,264 @@ if COHERE_AVAILABLE:
     except Exception as e:
         print(f"⚠ Cohere initialization warning: {e}")
 
-def search_students_by_name(name, db_session):
-    """Search for students by name and return matches"""
-    if not db_session or not name:
-        return []
-    
-    try:
-        from app.models import Student, RiskScore, StudentDataSnapshot
-        
-        name_clean = name.strip()
-        
-        # Try exact match first
-        students = db_session.query(Student).filter(
-            Student.name.ilike(name_clean)
-        ).all()
-        
-        # Try partial match
-        if not students:
-            students = db_session.query(Student).filter(
-                Student.name.ilike(f"%{name_clean}%")
-            ).all()
-        
-        results = []
-        for student in students[:5]:  # Limit to 5 results
-            latest_score = db_session.query(RiskScore).filter_by(
-                student_id=student.id
-            ).order_by(RiskScore.scored_at.desc()).first()
-            
-            latest_snapshot = db_session.query(StudentDataSnapshot).filter_by(
-                student_id=student.id
-            ).order_by(StudentDataSnapshot.created_at.desc()).first()
-            
-            results.append({
-                "id": student.id,
-                "name": student.name,
-                "grade": student.grade,
-                "email": student.email,
-                "risk_level": latest_score.risk_level if latest_score else "UNKNOWN",
-                "risk_score": latest_score.risk_score if latest_score else 0,
-                "attendance": latest_snapshot.attendance if latest_snapshot else 0,
-                "teacher_rating": latest_snapshot.teacher_rating if latest_snapshot else 0,
-            })
-        
-        return results
-    except Exception as e:
-        print(f"Error searching students: {e}")
-        return []
 
-def extract_name_from_message(message: str):
-    """Extract student name from natural language message"""
-    message = message.strip().lower()
+def is_general_question(text: str) -> bool:
+    """Check if text is a general question (not a student search)"""
+    text_lower = text.lower().strip()
     
-    # Remove common phrases
-    phrases_to_remove = [
-        "tell me about", "tell about", "how can i help", "how can i support",
-        "how to help", "what about", "show me", "info about", "information about",
-        "details about", "who is", "who's", "get me", "get info on",
-        "can you tell me about", "can you show me", "i want to know about",
-        "please tell me about", "help with", "help me", "details", "about", "info",
-        "student", "students", "named", "called", "name"
+    # General education/counseling questions
+    general_patterns = [
+        'how to', 'how can i', 'how do i',
+        'what is', 'what are', 'explain',
+        'tell me about', 'best practices', 'tips for',
+        'strategies for', 'ways to', 'methods for',
+        'help with', 'support for', 'signs of',
+        'depression', 'anxiety', 'stress', 'mental health',
+        'attendance', 'intervention', 'counseling',
+        'behavior', 'engagement', 'academic',
+        'why', 'when', 'where', 'which'
     ]
     
-    processed = message
+    # If text contains these patterns, it's likely a general question
+    for pattern in general_patterns:
+        if pattern in text_lower:
+            return True
+    
+    return False
+
+
+def is_pure_number(text: str) -> bool:
+    """Check if text is just a number (student ID)"""
+    text = text.strip()
+    # Match just numbers, potentially with ID prefix
+    if re.match(r'^\d+$', text):
+        return True
+    if re.match(r'^id\s*\d+$', text, re.IGNORECASE):
+        return True
+    return False
+
+
+def extract_student_id(text: str):
+    """Extract student ID from text"""
+    text = text.strip()
+    
+    # Priority 1: Just a number (e.g., "1315")
+    match = re.match(r'^(\d+)$', text)
+    if match:
+        return int(match.group(1))
+    
+    # Priority 2: ID patterns (e.g., "ID 1315", "id: 1315")
+    id_patterns = [
+        r'(?:ID|id|student id|student_id)[:\s]*(\d+)',
+        r'#(\d+)',
+    ]
+    
+    for pattern in id_patterns:
+        match = re.search(pattern, text)
+        if match:
+            return int(match.group(1))
+    
+    return None
+
+
+def extract_student_name(text: str):
+    """Extract student name from text (only if not a general question)"""
+    if is_general_question(text) or is_pure_number(text):
+        return None
+    
+    text_lower = text.strip().lower()
+    
+    # Remove common question phrases
+    phrases_to_remove = [
+        "tell me about", "tell about", "who is", "info about", "information about",
+        "details about", "about", "student", "show me", "can you tell me",
+        "i want to know", "please tell me", "what about", "student named",
+        "student called", "help with", "details on", "info on", "get me"
+    ]
+    
+    processed = text_lower
     for phrase in sorted(phrases_to_remove, key=len, reverse=True):
-        if processed.startswith(phrase):
-            processed = processed[len(phrase):].strip()
-            break
+        if phrase in processed:
+            processed = processed.replace(phrase, "").strip()
+    
+    # If nothing left after removing phrases, it's likely a general question
+    if not processed or len(processed) < 2:
+        return None
     
     # Extract quoted names
     quoted = re.findall(r'"([^"]+)"', processed)
     if quoted:
-        return quoted[0]
+        return quoted[0].strip()
     
-    # Extract name-like words (capitalized or known names)
-    words = processed.split()
+    # Extract capitalized words as potential names
+    words = text.split()
     name_words = []
-    stop_words = {'and', 'or', 'the', 'a', 'to', 'for', 'with', 'by', 'is', 'has', 'have'}
+    stop_words = {'and', 'or', 'the', 'a', 'to', 'for', 'with', 'is', 'are', 'by', 'about', 'me', 'you', 'how', 'can', 'i', 'in', 'on', 'of', 'at'}
     
     for word in words:
         clean_word = word.rstrip('.,!?;:').strip()
-        if not clean_word or clean_word.lower() in stop_words:
-            if name_words:
-                break
-            continue
-        name_words.append(clean_word)
+        
+        # Check if word is capitalized (likely a name) and not a stop word
+        if clean_word and clean_word[0].isupper() and clean_word.lower() not in stop_words:
+            name_words.append(clean_word)
+        elif name_words:
+            break
     
     return ' '.join(name_words) if name_words else None
 
-def get_chatbot_response(user_message: str, db_session=None):
-    """Main chatbot response function with student search"""
-    
-    # Search for student names
-    student_name = extract_name_from_message(user_message)
-    matching_students = []
-    
-    if student_name and db_session:
-        matching_students = search_students_by_name(student_name, db_session)
-    
-    # If multiple students found, ask for clarification
-    if len(matching_students) > 1:
-        response = f"🔍 **Found {len(matching_students)} students matching '{student_name}':**\n\n"
-        for i, student in enumerate(matching_students, 1):
-            response += f"{i}. **{student['name']}** (Grade {student['grade']}) - {student['risk_level']} Risk\n"
-        response += f"\nPlease specify which student by ID or ask again with more details."
-        return response
-    
-    # If exactly one student found, generate detailed response
-    elif len(matching_students) == 1:
-        student = matching_students[0]
-        return generate_student_response_detailed(user_message, student, db_session)
-    
-    # No student found, provide general guidance
-    else:
-        return generate_general_response(user_message)
 
-def generate_student_response_detailed(user_message: str, student: dict, db_session) -> str:
-    """Generate detailed response for a specific student"""
+def validate_student_data(student: dict) -> dict:
+    """Validate and clean student data"""
+    
+    # Fix attendance - ensure it's between 0-100
+    attendance = student.get('attendance', 0)
+    if attendance is None or attendance > 100:
+        attendance = 0
+    elif attendance < 0:
+        attendance = 0
+    
+    # Fix risk score - ensure it's between 0-100
+    risk_score = student.get('risk_score', 0)
+    if risk_score is None or risk_score > 100:
+        risk_score = 100
+    elif risk_score < 0:
+        risk_score = 0
+    
+    # Fix teacher rating - ensure it's between 0-5
+    teacher_rating = student.get('teacher_rating', 0)
+    if teacher_rating is None or teacher_rating > 5:
+        teacher_rating = 0
+    elif teacher_rating < 0:
+        teacher_rating = 0
+    
+    # Update student dict
+    student['attendance'] = attendance
+    student['risk_score'] = risk_score
+    student['teacher_rating'] = teacher_rating
+    
+    return student
+
+
+def search_students(db_session, student_id=None, student_name=None):
+    """Search for students by ID or name"""
+    if not db_session:
+        return []
+    
     try:
         from app.models import Student, RiskScore, StudentDataSnapshot
+        
+        # Priority 1: Search by ID
+        if student_id:
+            student = Student.query.get(student_id)
+            if student:
+                latest_score = RiskScore.query.filter_by(
+                    student_id=student.id
+                ).order_by(RiskScore.scored_at.desc()).first()
+                
+                latest_snapshot = StudentDataSnapshot.query.filter_by(
+                    student_id=student.id
+                ).order_by(StudentDataSnapshot.created_at.desc()).first()
+                
+                return [{
+                    "id": student.id,
+                    "name": student.name,
+                    "grade": student.grade,
+                    "email": student.email,
+                    "risk_level": latest_score.risk_level if latest_score else "UNKNOWN",
+                    "risk_score": latest_score.risk_score if latest_score else 0,
+                    "attendance": latest_snapshot.attendance if latest_snapshot else 0,
+                    "teacher_rating": latest_snapshot.teacher_rating if latest_snapshot else 0,
+                }]
+        
+        # Priority 2: Search by name
+        if student_name:
+            name_clean = student_name.strip()
+            
+            # Try exact match first
+            students = Student.query.filter(
+                Student.name.ilike(name_clean)
+            ).all()
+            
+            # Try partial match
+            if not students:
+                students = Student.query.filter(
+                    Student.name.ilike(f"%{name_clean}%")
+                ).all()
+            
+            results = []
+            for student in students[:10]:
+                latest_score = RiskScore.query.filter_by(
+                    student_id=student.id
+                ).order_by(RiskScore.scored_at.desc()).first()
+                
+                latest_snapshot = StudentDataSnapshot.query.filter_by(
+                    student_id=student.id
+                ).order_by(StudentDataSnapshot.created_at.desc()).first()
+                
+                results.append({
+                    "id": student.id,
+                    "name": student.name,
+                    "grade": student.grade,
+                    "email": student.email,
+                    "risk_level": latest_score.risk_level if latest_score else "UNKNOWN",
+                    "risk_score": latest_score.risk_score if latest_score else 0,
+                    "attendance": latest_snapshot.attendance if latest_snapshot else 0,
+                    "teacher_rating": latest_snapshot.teacher_rating if latest_snapshot else 0,
+                })
+            
+            return results
+        
+        return []
+    
+    except Exception as e:
+        print(f"Error searching students: {e}")
+        return []
+
+
+def format_student_info(student: dict) -> str:
+    """Format student information in a clean way"""
+    risk_icon = "🔴" if student['risk_level'] == 'HIGH' else "🟡" if student['risk_level'] == 'MEDIUM' else "🟢"
+    
+    info = f"""
+{student['name']} (Grade {student['grade']}) - ID: {student['id']}
+{'─' * 60}
+Status: {risk_icon} {student['risk_level']} RISK ({student['risk_score']}/100)
+Attendance: {student['attendance']}%
+Teacher Rating: {student['teacher_rating']}/5.0
+Email: {student['email'] or 'N/A'}
+"""
+    return info.strip()
+
+
+def show_student_selector(students: list) -> str:
+    """Show list of students for selection"""
+    response = f"Found {len(students)} student(s). Which one are you asking about?\n\n"
+    
+    for student in students:
+        risk_icon = "🔴" if student['risk_level'] == 'HIGH' else "🟡" if student['risk_level'] == 'MEDIUM' else "🟢"
+        response += f"ID {student['id']}: {student['name']} (Grade {student['grade']}) {risk_icon} {student['risk_level']}\n"
+    
+    response += "\nYou can reply with:\n"
+    response += "- Just the ID number (e.g., '1315' or '1381')\n"
+    response += "- Full name (e.g., 'Rekha Rai')\n"
+    response += "- Full question with ID (e.g., 'Tell me about 1315')\n"
+    
+    response += "\nCommon questions about a student:\n"
+    response += "- 'What is their risk level?'\n"
+    response += "- 'How is their attendance?'\n"
+    response += "- 'What support do they need?'\n"
+    response += "- 'Tell me about their academic performance'\n"
+    
+    return response
+
+
+def generate_student_response(user_message: str, student: dict, db_session) -> str:
+    """Generate response for a specific student"""
+    try:
+        from app.models import Student, StudentDataSnapshot
+        
+        # Validate data first
+        student = validate_student_data(student)
         
         # Get full student data
         student_obj = Student.query.get(student['id'])
@@ -148,83 +288,283 @@ def generate_student_response_detailed(user_message: str, student: dict, db_sess
         ).order_by(StudentDataSnapshot.created_at.desc()).first()
         
         if not student_obj or not latest_snapshot:
-            return f"📚 **{student['name']}** (Grade {student['grade']})\n⏳ Insufficient data available."
+            return f"Student {student['name']} found but insufficient data available."
         
         # Create analysis data
         student_data = {
             'name': student['name'],
             'grade': student['grade'],
             'risk_level': student['risk_level'],
-            'risk_score': student['risk_score'],
-            'attendance_rate': student['attendance'],
-            'teacher_rating': student['teacher_rating'],
-            'num_friends': latest_snapshot.num_friends,
-            'ias': latest_snapshot.ias,
-            'fee_status': latest_snapshot.fee_status,
+            'risk_score': int(student['risk_score']),
+            'attendance_rate': float(student['attendance']),
+            'teacher_rating': float(student['teacher_rating']),
+            'num_friends': int(latest_snapshot.num_friends) if latest_snapshot.num_friends else 0,
+            'ias': float(latest_snapshot.ias) if latest_snapshot.ias else 0,
+            'fee_status': latest_snapshot.fee_status or 'Unknown',
+            'counseling_visits': int(latest_snapshot.counseling_visits) if latest_snapshot.counseling_visits else 0,
         }
         
         analysis = analyze_student_needs(student_data)
         
-        # Build response
-        response = f"📚 **{student['name']}** (Grade {student['grade']})\n"
-        response += f"{'='*50}\n\n"
+        # Build clean response
+        response = f"\n{format_student_info(student)}\n\n"
         
-        response += f"**Risk Status**: {analysis['urgency']}\n"
-        response += f"**Risk Score**: {student['risk_score']}/100\n"
-        response += f"**Attendance**: {student['attendance']}%\n"
-        response += f"**Teacher Rating**: {student['teacher_rating']}/5.0\n"
-        response += f"**Close Friends**: {student_data['num_friends']}\n"
-        response += f"**IAS Score**: {student_data['ias']}/100\n\n"
-        
-        response += f"**Analysis**:\n"
-        response += f"{analysis['risk_description']}\n"
-        response += f"{analysis['attendance_issue']}\n"
-        response += f"{analysis['teacher_concern']}\n\n"
+        response += "ANALYSIS\n"
+        response += "─" * 60 + "\n"
+        response += f"Risk Status: {analysis['urgency']}\n"
+        response += f"Attendance: {analysis['attendance_issue']}\n"
+        response += f"Behavior: {analysis['teacher_concern']}\n\n"
         
         if analysis['has_warning_signals']:
-            response += "**⚠️ Warning Signals**:\n"
+            response += "WARNING SIGNALS\n"
+            response += "─" * 60 + "\n"
             for signal in analysis['warning_signals'][:5]:
-                response += f"  • {signal}\n"
+                response += f"• {signal}\n"
             response += "\n"
         
-        response += "**💡 Recommended Actions**:\n"
+        response += "RECOMMENDED SUPPORT\n"
+        response += "─" * 60 + "\n"
         for help_type in analysis['help_types']:
-            response += f"  • {help_type}\n"
+            response += f"• {help_type}\n"
         
-        return response
+        if analysis.get('mental_health_recommendations'):
+            response += "\nMENTAL HEALTH SUPPORT\n"
+            response += "─" * 60 + "\n"
+            for rec in analysis['mental_health_recommendations'][:5]:
+                response += f"• {rec}\n"
+        
+        if analysis.get('administrative_actions'):
+            response += "\nADMINISTRATIVE ACTIONS\n"
+            response += "─" * 60 + "\n"
+            for action in analysis['administrative_actions'][:5]:
+                response += f"• {action}\n"
+        
+        return response.strip()
     
     except Exception as e:
-        return f"❌ Error analyzing student: {str(e)}"
+        print(f"Error analyzing student: {e}")
+        return f"Error analyzing student {student.get('name', 'Unknown')}: {str(e)}"
+
 
 def generate_general_response(user_message: str) -> str:
     """Generate response for general educational questions"""
-    try:
-        if not COHERE_AVAILABLE or not client:
-            return "👋 **EduPulse AI Assistant**\n\nI can help with:\n" \
-                   "✅ Student performance analysis\n" \
-                   "📊 Risk assessment guidance\n" \
-                   "💬 Mental health support strategies\n" \
-                   "📚 Academic improvement tips\n" \
-                   "🎯 Intervention recommendations\n\n" \
-                   "**Try asking:**\n" \
-                   "- 'Tell me about [student name]'\n" \
-                   "- 'How do I detect depression in students?'\n" \
-                   "- 'Best practices for counseling?'"
+    if not COHERE_AVAILABLE or not client:
+        # Fallback responses for common questions
+        fallback_responses = {
+            'attendance': """
+ATTENDANCE INTERVENTION STRATEGIES
+
+Set Clear Expectations:
+• Communicate attendance policies to parents
+• Track patterns and address early
+• Celebrate perfect attendance records
+
+Identify Root Causes:
+• Health issues
+• Family problems
+• Lack of engagement
+• Transportation issues
+
+Intervention Actions:
+• Contact parents/guardians
+• Adjust class schedule if possible
+• Provide academic support
+• Refer to counselor for underlying issues
+
+Monitoring:
+• Weekly check-ins
+• Academic performance tracking
+• Parent communication logs
+""",
+            'depression': """
+SIGNS OF DEPRESSION IN STUDENTS
+
+Behavioral Signs:
+• Withdrawal from friends/activities
+• Changes in sleep patterns
+• Loss of interest in school
+• Increased irritability
+• Poor concentration
+• Academic decline
+
+Physical Signs:
+• Fatigue or low energy
+• Changes in appetite
+• Neglect of personal hygiene
+• Frequent complaints of pain
+
+Recommended Actions:
+• Document observed behaviors
+• Refer to school counselor
+• Communicate with parents
+• Provide supportive environment
+• Monitor progress regularly
+
+Resources:
+• School counselor/psychologist
+• Crisis hotlines
+• Mental health professionals
+• Support groups
+""",
+            'anxiety': """
+MANAGING STUDENT ANXIETY
+
+Recognition:
+• Excessive worry about school
+• Physical symptoms (headaches, stomachaches)
+• Avoidance behaviors
+• Perfectionism
+• Difficulty concentrating
+
+Support Strategies:
+• Create predictable routines
+• Reduce pressure/workload when needed
+• Teach relaxation techniques
+• Encourage physical activity
+• Provide quiet spaces
+
+When to Refer:
+• Anxiety interfering with learning
+• Physical symptoms
+• Social withdrawal
+• Persistent over multiple weeks
+
+Professional Help:
+• School counselor
+• Mental health specialist
+• Support groups
+• Crisis resources
+""",
+            'engagement': """
+IMPROVING STUDENT ENGAGEMENT
+
+Assess Current Level:
+• Classroom participation
+• Assignment completion
+• Attendance
+• Social interaction
+• Interest in subjects
+
+Strategies to Boost Engagement:
+• Make content relevant to student interests
+• Use varied teaching methods
+• Provide choice in assignments
+• Celebrate small victories
+• Build positive relationships
+• Create collaborative opportunities
+
+Monitor Progress:
+• Track attendance and grades
+• Observe classroom behavior
+• Conduct one-on-one check-ins
+• Adjust strategies as needed
+
+Support Resources:
+• Tutoring programs
+• Mentoring relationships
+• Extracurricular activities
+• Counselor referrals
+"""
+        }
         
-        prompt = f"""You are EduPulse AI, an expert school counselor assistant.
-Provide practical, actionable advice for educators.
+        # Check if question matches any fallback
+        question_lower = user_message.lower()
+        for key, response in fallback_responses.items():
+            if key in question_lower:
+                return response.strip()
+        
+        # Default general help message
+        return """
+EduPulse AI Assistant - How I Can Help
 
-Question: {user_message}
+Ask About Students:
+• Just type the student ID (e.g., '1315')
+• "Tell me about student 5"
+• "Who is Aayush Sharma?"
+• "Show me ID 3"
 
-Keep response concise (3-4 sentences max) and educational."""
+General Guidance:
+• "How to improve attendance?"
+• "Signs of depression in students?"
+• "Best practices for counseling?"
+• "Strategies for student engagement?"
+• "How to manage anxiety?"
+
+Student Search:
+• Use just student ID number
+• Use full name
+• Ask about specific concerns
+
+I'm here to help with:
+Academic performance analysis
+Mental health support strategies
+Risk assessment guidance
+Intervention recommendations
+Student engagement tips
+"""
+    
+    try:
+        prompt = f"""You are EduPulse AI, an expert school counselor assistant for educators.
+Provide practical, actionable advice for helping students succeed academically and emotionally.
+
+Question from educator: {user_message}
+
+Give concise, helpful advice in 3-4 sentences. Focus on:
+- Practical strategies
+- Real-world applications
+- Student-centered approaches
+- Evidence-based practices
+"""
         
         response = client.chat(
             message=prompt,
-            max_tokens=400,
+            max_tokens=300,
             temperature=0.7,
         )
-        return response.text
+        return response.text.strip()
     
     except Exception as e:
-        return "👋 **EduPulse AI Assistant**\n\nHow can I help you today?\n\n" \
-               "Try asking about specific students or get general counseling guidance."
+        print(f"Cohere API error: {e}")
+        return "I'm experiencing technical difficulties. Please try a simpler question or ask about a specific student using their ID or name."
+
+
+def get_chatbot_response(user_message: str, db_session=None):
+    """Main chatbot response function with smart student search"""
+    
+    # Check if it's a general question FIRST
+    if is_general_question(user_message):
+        return generate_general_response(user_message)
+    
+    # Extract student ID (highest priority for student search)
+    student_id = extract_student_id(user_message)
+    
+    # Search by ID if found
+    if student_id:
+        results = search_students(db_session, student_id=student_id)
+        
+        if results:
+            student = results[0]
+            return generate_student_response(user_message, student, db_session)
+        else:
+            return f"No student found with ID {student_id}.\n\nTry:\n- Using correct ID number\n- Student's full name\n- Ask a general counseling question"
+    
+    # Extract student name (second priority)
+    student_name = extract_student_name(user_message)
+    
+    if student_name:
+        results = search_students(db_session, student_name=student_name)
+        
+        # If exactly one match, generate detailed response
+        if len(results) == 1:
+            return generate_student_response(user_message, results[0], db_session)
+        
+        # If multiple matches, ask for clarification
+        elif len(results) > 1:
+            return show_student_selector(results)
+        
+        # No matches found
+        else:
+            return f"No student found with name '{student_name}'.\n\nTry:\n- Using student ID number\n- Full name spelling\n- General counseling question"
+    
+    # No student context found, provide general guidance
+    return generate_general_response(user_message)

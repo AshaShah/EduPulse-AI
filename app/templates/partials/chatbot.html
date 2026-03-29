@@ -6,20 +6,24 @@
     <div id="chatbot-panel" class="chatbot-panel" style="display:none;">
         <div class="chatbot-header">
             <div class="chatbot-header-title">
-                <h3>🤖 AI Assistant</h3>
+                <h3>AI Assistant</h3>
                 <p>Ask about students or get guidance</p>
             </div>
-            <button onclick="toggleChatbot()" class="close-btn">✕</button>
+            <div class="chatbot-header-actions">
+                <button id="btn-minimize" onclick="minimizeChatbot()" class="header-btn" title="Minimize">−</button>
+                <button id="btn-expand" onclick="expandChatbot()" class="header-btn" title="Expand" style="display:none;">⛶</button>
+                <button onclick="toggleChatbot()" class="close-btn" title="Close">✕</button>
+            </div>
         </div>
         
         <div id="chatbot-messages" class="chatbot-messages">
             <div class="message ai-message">
-                <p>👋 Hi! I'm EduPulse AI Assistant.</p>
-                <p style="font-size: 12px; margin: 8px 0 0 0;">Try asking:</p>
-                <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 12px;">
-                    <li>"Tell me about Aayush"</li>
+                <p>Hi! I'm EduPulse AI Assistant.</p>
+                <p style="font-size: 12px; margin-top: 8px; color: #64748b;">Try asking:</p>
+                <ul style="margin: 6px 0 0 0; padding-left: 18px; font-size: 12px; color: #64748b;">
+                    <li>"Tell me about student 5"</li>
+                    <li>"Who is Aayush?"</li>
                     <li>"How to help struggling students?"</li>
-                    <li>"Mental health signs?"</li>
                 </ul>
             </div>
         </div>
@@ -35,24 +39,174 @@
                     ➤
                 </button>
             </div>
-            <p class="chatbot-footer">Powered by Cohere AI</p>
+            <p class="chatbot-footer">Powered by EduPulse</p>
         </div>
     </div>
 </div>
 
 <script>
-function toggleChatbot() {
-    const panel = document.getElementById('chatbot-panel');
-    const isVisible = panel.style.display === 'flex';
-    panel.style.display = isVisible ? 'none' : 'flex';
+// ===== CHATBOT STATE MANAGEMENT =====
+let chatbotState = {
+    isOpen: false,
+    isMinimized: false,
+    isExpanded: false,
+    messages: []
+};
+
+// ===== LOAD CHAT HISTORY FROM SESSION =====
+function loadChatHistory() {
+    const saved = sessionStorage.getItem('chatbot_messages');
+    if (saved) {
+        try {
+            chatbotState.messages = JSON.parse(saved);
+            renderChatHistory();
+        } catch (e) {
+            console.error('Error loading chat history:', e);
+        }
+    }
 }
 
+// ===== SAVE CHAT TO SESSION =====
+function saveChatHistory() {
+    sessionStorage.setItem('chatbot_messages', JSON.stringify(chatbotState.messages));
+}
+
+// ===== RENDER EXISTING MESSAGES =====
+function renderChatHistory() {
+    const messagesDiv = document.getElementById('chatbot-messages');
+    const existingMessages = messagesDiv.querySelectorAll('.message');
+    
+    if (existingMessages.length <= 1) {
+        // Only initial message exists
+        chatbotState.messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${msg.type}`;
+            messageDiv.innerHTML = formatMessageContent(msg.content);
+            messagesDiv.appendChild(messageDiv);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+}
+
+// ===== FORMAT MESSAGE CONTENT =====
+function formatMessageContent(text) {
+    let html = text
+        .split('\n')
+        .map(line => {
+            if (line.startsWith('──')) {
+                return '<div style="height: 4px;"></div>';
+            } else if (line.toUpperCase() === line && line.trim().length > 0 && !line.includes('─')) {
+                // All caps = header
+                return `<p style="font-weight: 700; color: #2563eb; margin-top: 10px; margin-bottom: 6px; font-size: 13px;">${escapeHtml(line)}</p>`;
+            } else if (line.startsWith('• ')) {
+                // Bullet points
+                const content = line.substring(2);
+                return `<div style="margin-left: 16px; margin-top: 4px;">• ${escapeHtml(content)}</div>`;
+            } else if (line.startsWith('─')) {
+                return '<div style="height: 2px;"></div>';
+            } else if (line.trim() === '') {
+                return '<div style="height: 4px;"></div>';
+            } else {
+                return `<p style="margin-top: 4px; color: #334155; font-size: 13px;">${escapeHtml(line)}</p>`;
+            }
+        })
+        .join('');
+    
+    return html;
+}
+
+// ===== TOGGLE CHATBOT OPEN/CLOSE =====
+function toggleChatbot() {
+    const panel = document.getElementById('chatbot-panel');
+    const toggle = document.getElementById('chatbot-toggle');
+    
+    if (panel.style.display === 'flex') {
+        panel.classList.add('closing');
+        setTimeout(() => {
+            panel.style.display = 'none';
+            panel.classList.remove('closing');
+            chatbotState.isOpen = false;
+        }, 300);
+    } else {
+        panel.style.display = 'flex';
+        panel.classList.remove('closing');
+        chatbotState.isOpen = true;
+        chatbotState.isMinimized = false;
+        chatbotState.isExpanded = false;
+        updateChatbotUI();
+        
+        setTimeout(() => {
+            const messagesDiv = document.getElementById('chatbot-messages');
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            document.getElementById('chatbot-input').focus();
+        }, 100);
+    }
+}
+
+// ===== MINIMIZE CHATBOT =====
+function minimizeChatbot() {
+    const panel = document.getElementById('chatbot-panel');
+    const messagesDiv = document.getElementById('chatbot-messages');
+    const inputArea = document.getElementById('chatbot-input-area');
+    
+    chatbotState.isMinimized = !chatbotState.isMinimized;
+    
+    if (chatbotState.isMinimized) {
+        messagesDiv.style.display = 'none';
+        inputArea.style.display = 'none';
+        panel.classList.add('minimized');
+        document.getElementById('btn-minimize').textContent = '+';
+    } else {
+        messagesDiv.style.display = 'flex';
+        inputArea.style.display = 'block';
+        panel.classList.remove('minimized');
+        document.getElementById('btn-minimize').textContent = '−';
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+}
+
+// ===== EXPAND CHATBOT FULLSCREEN =====
+function expandChatbot() {
+    const panel = document.getElementById('chatbot-panel');
+    const messagesDiv = document.getElementById('chatbot-messages');
+    
+    chatbotState.isExpanded = !chatbotState.isExpanded;
+    
+    if (chatbotState.isExpanded) {
+        panel.classList.add('fullscreen');
+        document.getElementById('btn-expand').textContent = '⊟';
+    } else {
+        panel.classList.remove('fullscreen');
+        document.getElementById('btn-expand').textContent = '⛶';
+    }
+    
+    setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }, 100);
+}
+
+// ===== UPDATE UI BUTTONS =====
+function updateChatbotUI() {
+    const minimizeBtn = document.getElementById('btn-minimize');
+    const expandBtn = document.getElementById('btn-expand');
+    
+    if (chatbotState.isMinimized) {
+        minimizeBtn.textContent = '+';
+        expandBtn.style.display = 'inline-block';
+    } else {
+        minimizeBtn.textContent = '−';
+        expandBtn.style.display = 'inline-block';
+    }
+}
+
+// ===== HANDLE CHAT INPUT =====
 function handleChatInput(e) {
     if (e.key === 'Enter') {
         sendChatMessage();
     }
 }
 
+// ===== SEND CHAT MESSAGE =====
 function sendChatMessage() {
     const input = document.getElementById('chatbot-input');
     const message = input.value.trim();
@@ -60,13 +214,28 @@ function sendChatMessage() {
     
     const messagesDiv = document.getElementById('chatbot-messages');
     
-    // Add user message
+    // Add user message to DOM
     const userMsg = document.createElement('div');
     userMsg.className = 'message user-message';
     userMsg.innerHTML = `<p>${escapeHtml(message)}</p>`;
     messagesDiv.appendChild(userMsg);
     
+    // Save to history
+    chatbotState.messages.push({
+        type: 'user-message',
+        content: message
+    });
+    
     input.value = '';
+    input.focus();
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Show typing indicator
+    const typingMsg = document.createElement('div');
+    typingMsg.className = 'message ai-message';
+    typingMsg.id = 'typing-indicator';
+    typingMsg.innerHTML = `<p>Thinking...</p>`;
+    messagesDiv.appendChild(typingMsg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     
     // Get AI response
@@ -77,23 +246,51 @@ function sendChatMessage() {
     })
     .then(r => r.json())
     .then(data => {
+        // Remove typing indicator
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
+        
         const aiMsg = document.createElement('div');
         aiMsg.className = 'message ai-message';
-        aiMsg.innerHTML = `<p>${escapeHtml(data.response)}</p>`;
+        aiMsg.innerHTML = formatMessageContent(data.response);
         messagesDiv.appendChild(aiMsg);
+        
+        // Save to history
+        chatbotState.messages.push({
+            type: 'ai-message',
+            content: data.response
+        });
+        
+        saveChatHistory();
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     })
     .catch(err => {
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
+        
         const errMsg = document.createElement('div');
         errMsg.className = 'message error-message';
-        errMsg.innerHTML = `<p>❌ Error: ${err}</p>`;
+        errMsg.innerHTML = `<p>Error: ${escapeHtml(err.message || 'Connection failed')}</p>`;
         messagesDiv.appendChild(errMsg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 }
 
+// ===== ESCAPE HTML =====
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ===== INITIALIZE ON PAGE LOAD =====
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatHistory();
+    updateChatbotUI();
+});
+
+// ===== CLEANUP ON PAGE UNLOAD =====
+window.addEventListener('beforeunload', function() {
+    saveChatHistory();
+});
 </script>
