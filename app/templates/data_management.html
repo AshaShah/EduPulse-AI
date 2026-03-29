@@ -10,15 +10,15 @@
 
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab(event, 'students')">
-        <span class="tab-icon"></span>
+        <span class="tab-icon">👥</span>
         <span>Students</span>
     </button>
     <button class="tab-btn" onclick="switchTab(event, 'history')">
-        <span class="tab-icon"></span>
+        <span class="tab-icon">📋</span>
         <span>Upload History</span>
     </button>
     <button class="tab-btn" onclick="switchTab(event, 'danger')">
-        <span class="tab-icon"></span>
+        <span class="tab-icon">⚠️</span>
         <span>Danger Zone</span>
     </button>
 </div>
@@ -66,7 +66,7 @@
             </div>
         {% else %}
             <div class="empty-state">
-                <p> No students uploaded yet</p>
+                <p>No students uploaded yet</p>
             </div>
         {% endif %}
     </section>
@@ -108,7 +108,7 @@
             </div>
         {% else %}
             <div class="empty-state">
-                <p> No upload history available</p>
+                <p>No upload history available</p>
             </div>
         {% endif %}
     </section>
@@ -136,14 +136,6 @@
                     Delete All Students
                 </button>
             </div>
-
-            <!-- <div class="danger-action critical">
-                <h3>Delete ALL Data</h3>
-                <p>Permanently delete students, upload history, and all related data. Everything will be permanently erased.</p>
-                <button class="btn btn-danger btn-delete-all" id="btn-delete-all-data" style="background: #7f1d1d;">
-                    Delete Everything
-                </button>
-            </div> -->
             
             <div class="danger-action">
                 <h3>Database Statistics</h3>
@@ -182,10 +174,7 @@
 
 {% block extra_css %}
 <style>
-/* ===================================
-   Data Management Header
-   =================================== */
-
+/* Data Management Header */
 .data-mgmt-header {
     margin-bottom: 32px;
 }
@@ -203,10 +192,7 @@
     margin: 0;
 }
 
-/* ===================================
-   Tabs
-   =================================== */
-
+/* Tabs */
 .tabs {
     display: flex;
     gap: 0;
@@ -271,10 +257,7 @@
     }
 }
 
-/* ===================================
-   Cards
-   =================================== */
-
+/* Card */
 .card {
     background: white;
     padding: 24px;
@@ -311,10 +294,7 @@
     font-weight: 600;
 }
 
-/* ===================================
-   Table
-   =================================== */
-
+/* Table */
 .table-container {
     overflow-x: auto;
 }
@@ -363,10 +343,7 @@
     color: #6b7280;
 }
 
-/* ===================================
-   Buttons
-   =================================== */
-
+/* Buttons */
 .btn-delete-small {
     padding: 6px 12px;
     background: #f3f4f6;
@@ -419,10 +396,7 @@
     margin-top: 12px;
 }
 
-/* ===================================
-   Danger Actions
-   =================================== */
-
+/* Danger Actions */
 .danger-actions {
     display: grid;
     gap: 16px;
@@ -460,10 +434,7 @@
     font-style: italic;
 }
 
-/* ===================================
-   Stats
-   =================================== */
-
+/* Stats */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -496,10 +467,7 @@
     margin: 0;
 }
 
-/* ===================================
-   Badges
-   =================================== */
-
+/* Badges */
 .badge {
     display: inline-block;
     padding: 4px 8px;
@@ -517,10 +485,7 @@
     background: #ef4444;
 }
 
-/* ===================================
-   Empty State
-   =================================== */
-
+/* Empty State */
 .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -532,10 +497,7 @@
     margin: 0;
 }
 
-/* ===================================
-   Modal
-   =================================== */
-
+/* Modal */
 .modal {
     position: fixed;
     top: 0;
@@ -597,10 +559,7 @@
     font-size: 14px;
 }
 
-/* ===================================
-   Info Text
-   =================================== */
-
+/* Info Text */
 .info-text {
     color: #6b7280;
     margin: 0;
@@ -614,10 +573,7 @@
     font-size: 13px;
 }
 
-/* ===================================
-   Responsive
-   =================================== */
-
+/* Responsive */
 @media (max-width: 768px) {
     .tabs {
         overflow-x: auto;
@@ -691,22 +647,18 @@ let deleteType = null;
 function switchTab(event, tabName) {
     event.preventDefault();
     
-    // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(el => {
         el.style.display = 'none';
     });
     
-    // Remove active from all buttons
     document.querySelectorAll('.tab-btn').forEach(el => {
         el.classList.remove('active');
     });
     
-    // Show selected tab
     document.getElementById(tabName).style.display = 'block';
     event.target.closest('.tab-btn').classList.add('active');
 }
 
-// Event delegation for delete buttons
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('btn-delete-student')) {
         const studentId = e.target.dataset.id;
@@ -715,16 +667,10 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Delete buttons
 const btnDeleteAllStudents = document.getElementById('btn-delete-all-students');
-const btnDeleteAllData = document.getElementById('btn-delete-all-data');
 
 if (btnDeleteAllStudents) {
     btnDeleteAllStudents.addEventListener('click', deleteAllStudents);
-}
-
-if (btnDeleteAllData) {
-    btnDeleteAllData.addEventListener('click', deleteAllData);
 }
 
 function deleteStudent(studentId, studentName) {
@@ -757,26 +703,6 @@ function deleteAllStudents() {
     modal.style.display = 'flex';
 }
 
-function deleteAllData() {
-    deleteTarget = null;
-    deleteType = 'all-data';
-    
-    const modal = document.getElementById('confirmModal');
-    const studentCount = document.getElementById('stat-students').textContent;
-    const uploadCount = document.getElementById('stat-uploads').textContent;
-    
-    document.getElementById('modalTitle').textContent = 'Delete ALL Data';
-    document.getElementById('modalMessage').innerHTML = 
-        `<strong style="color:#991b1b; font-size: 16px;">WARNING: This will delete EVERYTHING!</strong><br><br>` +
-        `Students: ${studentCount}<br>` +
-        `Uploads: ${uploadCount}<br><br>` +
-        `<strong style="color:#991b1b;">All data will be permanently erased.</strong><br><br>` +
-        `Type <strong>"DELETE ALL"</strong> to confirm:` +
-        `<input type="text" id="confirmInput" placeholder="Type DELETE ALL to confirm">`;
-    
-    modal.style.display = 'flex';
-}
-
 function closeModal() {
     document.getElementById('confirmModal').style.display = 'none';
     deleteTarget = null;
@@ -790,10 +716,10 @@ function confirmDelete() {
             .then(data => {
                 closeModal();
                 if (data.success) {
-                    alert('✅ Student deleted successfully');
+                    alert('Student deleted successfully');
                     location.reload();
                 } else {
-                    alert('❌ Error: ' + data.error);
+                    alert('Error: ' + data.error);
                 }
             })
             .catch(err => alert('Error: ' + err));
@@ -810,37 +736,16 @@ function confirmDelete() {
             .then(data => {
                 closeModal();
                 if (data.success) {
-                    alert(' All students deleted!\n\n' + data.message);
+                    alert('All students deleted!\n\n' + data.message);
                     location.reload();
                 } else {
-                    alert('❌ Error: ' + data.error);
-                }
-            })
-            .catch(err => alert('Error: ' + err));
-    }
-    else if (deleteType === 'all-data') {
-        const input = document.getElementById('confirmInput');
-        if (input && input.value !== 'DELETE ALL') {
-            alert('Please type "DELETE ALL" to confirm');
-            return;
-        }
-        
-        fetch('/api/delete-all-data', { method: 'DELETE' })
-            .then(r => r.json())
-            .then(data => {
-                closeModal();
-                if (data.success) {
-                    alert('🔥 ALL DATA DELETED!\n\n' + data.message);
-                    location.reload();
-                } else {
-                    alert('❌ Error: ' + data.error);
+                    alert('Error: ' + data.error);
                 }
             })
             .catch(err => alert('Error: ' + err));
     }
 }
 
-// Close modal on outside click
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('confirmModal');
     if (e.target === modal) {
