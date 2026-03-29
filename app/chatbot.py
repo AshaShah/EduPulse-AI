@@ -27,25 +27,23 @@ def is_general_question(text: str) -> bool:
     """Check if text is a general question (not a student search)"""
     text_lower = text.lower().strip()
     
-    # General education/counseling questions
     general_patterns = [
-        'how to', 'how can i', 'how do i',
-        'what is', 'what are', 'explain',
+        'how to', 'how can i', 'how do i', 'how can we',
+        'what is', 'what are', 'explain', 'what support',
         'tell me about', 'best practices', 'tips for',
         'strategies for', 'ways to', 'methods for',
         'help with', 'support for', 'signs of',
         'depression', 'anxiety', 'stress', 'mental health',
         'attendance', 'intervention', 'counseling',
         'behavior', 'engagement', 'academic',
-        'why', 'when', 'where', 'which'
+        'why', 'when', 'where', 'which', 'provide',
+        'can i', 'should i', 'what should'
     ]
     
-    # If text contains these patterns AND it's longer than 2 words, it's a general question
-    # Short texts like "aayush" should be treated as names
-    if len(text_lower.split()) > 2:
-        for pattern in general_patterns:
-            if pattern in text_lower:
-                return True
+    # Check if text contains general patterns
+    for pattern in general_patterns:
+        if pattern in text_lower:
+            return True
     
     return False
 
@@ -72,11 +70,13 @@ def extract_student_id(text: str):
     # Priority 2: ID patterns
     id_patterns = [
         r'(?:ID|id|student id|student_id)[:\s]*(\d+)',
+        r'student\s+(\d+)',
         r'#(\d+)',
+        r'(\d+)\s*(?:student|id)',
     ]
     
     for pattern in id_patterns:
-        match = re.search(pattern, text)
+        match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return int(match.group(1))
     
@@ -85,30 +85,36 @@ def extract_student_id(text: str):
 
 def extract_student_name(text: str):
     """
-    Extract student name from text (only if not a general question)
-    Prioritizes name extraction for short inputs
+    Extract student name from text (only if it's actually a name search, not a general question)
     """
+    # ✅ FIRST: Check if this is a general question
+    if is_general_question(text):
+        return None
+    
     if is_pure_number(text):
         return None
     
     text_clean = text.strip()
     text_lower = text_clean.lower()
     
-    # For short inputs (1-3 words), assume it's a name unless it contains general patterns
+    # For short inputs (1-3 words), assume it's a name
     words = text_clean.split()
     if len(words) <= 3:
         # Check if it contains strong general question indicators
-        general_indicators = ['how', 'what', 'tell', 'when', 'where', 'why', 'which']
+        general_indicators = ['how', 'what', 'tell', 'when', 'where', 'why', 'which', 'can', 'should', 'provide', 'support']
         if not any(indicator in text_lower for indicator in general_indicators):
             # Likely a name
             return text_clean
+        else:
+            return None
     
     # Remove common question phrases
     phrases_to_remove = [
         "tell me about", "tell about", "who is", "info about", "information about",
         "details about", "about", "student", "show me", "can you tell me",
         "i want to know", "please tell me", "what about", "student named",
-        "student called", "help with", "details on", "info on", "get me"
+        "student called", "help with", "details on", "info on", "get me",
+        "what support", "how can i help", "how to help", "support for"
     ]
     
     processed = text_lower
@@ -127,7 +133,7 @@ def extract_student_name(text: str):
     # For remaining text, use original capitalization
     # Extract capitalized words as potential names
     name_words = []
-    stop_words = {'and', 'or', 'the', 'a', 'to', 'for', 'with', 'is', 'are', 'by', 'about', 'me', 'you', 'how', 'can', 'i', 'in', 'on', 'of', 'at'}
+    stop_words = {'and', 'or', 'the', 'a', 'to', 'for', 'with', 'is', 'are', 'by', 'about', 'me', 'you', 'how', 'can', 'i', 'in', 'on', 'of', 'at', 'provide', 'support'}
     
     for word in text_clean.split():
         clean_word = word.rstrip('.,!?;:').strip()
@@ -137,7 +143,7 @@ def extract_student_name(text: str):
         elif name_words:
             break
     
-    return ' '.join(name_words) if name_words else processed.title()
+    return ' '.join(name_words) if name_words else None
 
 
 def validate_student_data(student: dict) -> dict:
@@ -348,6 +354,36 @@ def generate_general_response(user_message: str) -> str:
     """Generate response for general educational questions"""
     if not COHERE_AVAILABLE or not client:
         fallback_responses = {
+            'mental': """
+MENTAL HEALTH SUPPORT FOR STUDENTS
+
+Assessment:
+• Observe changes in behavior
+• Listen for verbal cues about stress
+• Note physical symptoms
+• Track academic performance changes
+
+Support Strategies:
+• Create a safe, non-judgmental space
+• Practice active listening
+• Validate their feelings
+• Help identify coping strategies
+• Refer to school counselor when needed
+
+Red Flags Requiring Immediate Referral:
+• Expressions of self-harm
+• Extreme withdrawal
+• Significant behavioral changes
+• Academic decline
+• Social isolation
+
+Resources:
+• School counselor
+• Mental health professional
+• Crisis hotlines
+• Support groups
+• Family involvement
+""",
             'attendance': """
 ATTENDANCE INTERVENTION STRATEGIES
 
@@ -451,7 +487,7 @@ EduPulse AI Assistant - How I Can Help
 Ask About Students:
 • Just type the student ID (e.g., '1013')
 • Type a first or last name (e.g., 'Aayush')
-• "Tell me about Aayush Khatiwada"
+• "Tell me about student 1194"
 
 General Guidance:
 • "How to improve attendance?"
@@ -459,6 +495,7 @@ General Guidance:
 • "Best practices for counseling?"
 • "Strategies for student engagement?"
 • "How to manage anxiety?"
+• "What mental support can I provide?"
 
 I'm here to help with:
 Academic performance analysis
@@ -496,7 +533,20 @@ Give concise, helpful advice in 3-4 sentences. Focus on:
 def get_chatbot_response(user_message: str, db_session=None):
     """Main chatbot response function with smart student search"""
     
-    # Extract student ID first (highest priority)
+    # ✅ FIRST: Check if this is a general question
+    if is_general_question(user_message):
+        # Still try to extract student ID if present
+        student_id = extract_student_id(user_message)
+        if student_id:
+            results = search_students(db_session, student_id=student_id)
+            if results:
+                # It's a specific question about a student
+                return generate_student_response(user_message, results[0], db_session)
+        
+        # It's a general question
+        return generate_general_response(user_message)
+    
+    # Extract student ID (highest priority for non-general questions)
     student_id = extract_student_id(user_message)
     
     if student_id:
@@ -521,10 +571,6 @@ def get_chatbot_response(user_message: str, db_session=None):
         
         else:
             return f"No student found with name '{student_name}'.\n\nTry:\n- Using student ID number\n- Full name spelling\n- General counseling question"
-    
-    # Check if it's a general question
-    if is_general_question(user_message):
-        return generate_general_response(user_message)
     
     # Default: provide general guidance
     return generate_general_response(user_message)
