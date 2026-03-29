@@ -15,7 +15,7 @@
 
 > *Empowering educators with AI-driven insights to identify at-risk students and support mental health*
 
-[Features](#-features) • [Quick Start](#-setup-instructions) • [Team](#meet-the-team) • [API Docs](#-api-documentation)
+[Features](#-features) • [Quick Start](#-setup-instructions) • [Team](#meet-the-team-3) • [API Docs](#-api-documentation)
 
 </div>
 
@@ -33,7 +33,7 @@
 - [Features](#-features)
 - [Setup Instructions](#-setup-instructions)
 - [Project Structure](#-project-structure)
-- [Meet the Team](#meet-the-team)
+- [Meet the Team](#meet-the-team-3)
 - [Usage Guide](#-usage-guide)
 - [API Documentation](#-api-documentation)
 - [Troubleshooting](#-troubleshooting)
