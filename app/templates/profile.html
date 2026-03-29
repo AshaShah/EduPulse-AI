@@ -352,16 +352,16 @@
 {% block content %}
 <div class="profile-header">
     <h1>{{ student.name }}</h1>
-    <p>📚 Grade {{ student.grade }} | 🆔 ID: {{ student.id }} | 📍 {{ student.address or 'Address N/A' }}</p>
+    <p> Grade {{ student.grade }} |  ID: {{ student.id }} |  {{ student.address or 'Address N/A' }}</p>
 </div>
 
 <div class="profile-grid">
     <!-- Student Info -->
     <section class="card">
-        <h2>📋 Student Information</h2>
+        <h2> Student Information</h2>
         <div class="info-grid">
             <div class="info-item">
-                <label>📍 Address</label>
+                <label> Address</label>
                 <p>{{ student.address or 'N/A' }}</p>
             </div>
             <div class="info-item">
@@ -369,7 +369,7 @@
                 <p>{{ student.email or 'N/A' }}</p>
             </div>
             <div class="info-item">
-                <label>🚌 Travel Time</label>
+                <label> Travel Time</label>
                 <p>{{ student.travel_time or 'N/A' }} hrs</p>
             </div>
         </div>
@@ -377,22 +377,22 @@
 
     <!-- Family Background -->
     <section class="card">
-        <h2>👨‍👩‍👧 Family Background</h2>
+        <h2> Family Background</h2>
         <div class="info-grid">
             <div class="info-item">
-                <label>👨 Father's Job</label>
+                <label> Father's Job</label>
                 <p>{{ student.father_occupation or 'N/A' }}</p>
             </div>
             <div class="info-item">
-                <label>🎓 Father's Education</label>
+                <label> Father's Education</label>
                 <p>{{ student.father_education or 'N/A' }}</p>
             </div>
             <div class="info-item">
-                <label>👩 Mother's Job</label>
+                <label> Mother's Job</label>
                 <p>{{ student.mother_occupation or 'N/A' }}</p>
             </div>
             <div class="info-item">
-                <label>🎓 Mother's Education</label>
+                <label> Mother's Education</label>
                 <p>{{ student.mother_education or 'N/A' }}</p>
             </div>
         </div>
@@ -400,7 +400,7 @@
 
     <!-- Risk Assessment -->
     <section class="card risk-card full-width">
-        <h2>⚠️ Risk Assessment</h2>
+        <h2> Risk Assessment</h2>
         {% if student.risk_level %}
             <div class="risk-status">
                 <span class="badge badge-{{ student.risk_level | lower }}">
@@ -409,7 +409,7 @@
                 <p>Score: <strong>{{ student.risk_score }}/100</strong></p>
             </div>
             <div class="risk-details">
-                <h3>🚨 Key Signals:</h3>
+                <h3> Key Signals:</h3>
                 <ul>
                     {% for signal in student.key_signals %}
                         <li>{{ signal }}</li>
@@ -417,19 +417,19 @@
                         <li>✅ No warning signals detected</li>
                     {% endfor %}
                 </ul>
-                <h3 style="margin-top: 20px;">📊 Pattern:</h3>
+                <h3 style="margin-top: 20px;"> Pattern:</h3>
                 <p>{{ student.pattern or 'No pattern detected' }}</p>
-                <h3 style="margin-top: 20px;">✏️ Recommended Action:</h3>
+                <h3 style="margin-top: 20px;"> Recommended Action:</h3>
                 <p>{{ student.counselor_action or 'Monitor performance' }}</p>
             </div>
         {% else %}
-            <p>⏳ No risk assessment available yet</p>
+            <p> No risk assessment available yet</p>
         {% endif %}
     </section>
 
     <!-- Academic Performance Chart -->
     <section class="card">
-        <h2>📚 Academic Performance</h2>
+        <h2> Academic Performance</h2>
         <div class="canvas-container">
             <canvas id="academicChart"></canvas>
         </div>
@@ -463,7 +463,7 @@
 
     <!-- Attendance Chart -->
     <section class="card">
-        <h2>📍 Attendance & Finance</h2>
+        <h2> Attendance & Finance</h2>
         <div class="canvas-container">
             <canvas id="attendanceChart"></canvas>
         </div>
@@ -489,9 +489,9 @@
                     <td>
                         <span class="badge badge-{{ 'danger' if student.fee_status == 'Overdue' else 'success' }}">
                             {% if student.fee_status == 'Overdue' %}
-                                ⚠️ {{ student.fee_status }}
+                                 {{ student.fee_status }}
                             {% else %}
-                                ✅ {{ student.fee_status or 'Unknown' }}
+                                 {{ student.fee_status or 'Unknown' }}
                             {% endif %}
                         </span>
                     </td>
@@ -502,7 +502,7 @@
 
     <!-- Engagement & Wellbeing -->
     <section class="card">
-        <h2>💬 Engagement & Wellbeing</h2>
+        <h2> Engagement & Wellbeing</h2>
         <div class="canvas-container">
             <canvas id="engagementChart"></canvas>
         </div>
@@ -528,15 +528,15 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>👥 Close Friends</td>
+                    <td> Close Friends</td>
                     <td>{{ student.num_friends or 0 }}</td>
                 </tr>
                 <tr>
-                    <td>💬 Counseling Visits</td>
+                    <td> Counseling Visits</td>
                     <td>{{ student.counseling_visits or 0 }}</td>
                 </tr>
                 <tr>
-                    <td>🧠 Mental Health</td>
+                    <td> Mental Health</td>
                     <td>{{ student.mental_health_summary or 'No summary' }}</td>
                 </tr>
             </table>
@@ -545,15 +545,15 @@
 
     <!-- Teacher Notes -->
     <section class="card full-width">
-        <h2>📝 Teacher Notes</h2>
+        <h2> Teacher Notes</h2>
         <div class="teacher-notes">
-            {{ student.teacher_notes or '✅ No notes available' }}
+            {{ student.teacher_notes or ' No notes available' }}
         </div>
     </section>
 
     <!-- AI Insight -->
     <section class="card full-width">
-        <h2>🤖 AI Insights</h2>
+        <h2> AI Insights</h2>
         <button class="btn btn-primary" id="btn-ai-insight" data-student-id="{{ student.id }}">
             🔍 Generate AI Insight
         </button>

@@ -1,6 +1,6 @@
 venv/
 .venv/
-__pycache__/
+app/__pycache__/
 *.pyc
 .env
 instance/*.db
@@ -9,3 +9,5 @@ node_modules/
 dist/
 build/
 .DS_Store
+__pycache__/
+.vscode/

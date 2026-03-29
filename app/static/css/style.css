@@ -259,7 +259,7 @@ code {
 }
 
 .btn-logout:hover {
-  background: #dc2626;
+  background: #9f3d3d;
   box-shadow: var(--shadow-md);
 }
 
