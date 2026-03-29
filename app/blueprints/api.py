@@ -8,6 +8,7 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 def search_students():
     """Search for students"""
     query = request.args.get('q', '').lower()
+    grade_filter = request.args.get('grade')
     risk_filter = request.args.get('risk', 'all')
     
     students_query = db.session.query(Student, RiskScore).join(
@@ -17,6 +18,13 @@ def search_students():
     if query:
         students_query = students_query.filter(Student.name.ilike(f'%{query}%'))
     
+    if grade_filter and grade_filter.lower() != 'all':
+        try:
+            grade_value = int(grade_filter)
+            students_query = students_query.filter(Student.grade == grade_value)
+        except ValueError:
+            pass  # Ignore invalid grade values instead of failing the request
+
     if risk_filter != 'all':
         students_query = students_query.filter(RiskScore.risk_level == risk_filter.upper())
     

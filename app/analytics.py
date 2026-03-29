@@ -23,13 +23,22 @@ def calculate_dashboard_stats():
     avg_rating = 0
     
     if all_snapshots:
-        # Calculate actual attendance percentages
-        attendance_values = [s.attendance for s in all_snapshots if s.attendance and s.attendance > 0]
-        rating_values = [s.teacher_rating for s in all_snapshots if s.teacher_rating and s.teacher_rating > 0]
-        
+        # Accepts 0, None, and decimal (0-1) or percent (0-100)
+        attendance_values = [float(s.attendance) for s in all_snapshots if s.attendance is not None]
+        rating_values = [float(s.teacher_rating) for s in all_snapshots if s.teacher_rating is not None and s.teacher_rating > 0]
+
         if attendance_values:
-            avg_attendance = round(sum(attendance_values) / len(attendance_values), 1)
-        
+            max_att = max(attendance_values)
+            min_att = min(attendance_values)
+            # If all values are 0, average is 0
+            if max_att == 0 and min_att == 0:
+                avg_attendance = 0.0
+            else:
+                # If max is <= 1, treat as fraction and scale to percent
+                if max_att <= 1:
+                    attendance_values = [v * 100 for v in attendance_values]
+                avg_attendance = round(sum(attendance_values) / len(attendance_values), 2)
+
         if rating_values:
             avg_rating = round(sum(rating_values) / len(rating_values), 2)
     
@@ -65,53 +74,62 @@ def calculate_risk_score(student_id):
         risk_score_value = 0
         key_signals = []
         
+        # Safely convert values to float
+        attendance = float(snapshot.attendance) if snapshot.attendance is not None else 0
+        ias = float(snapshot.ias) if snapshot.ias is not None else 0
+        teacher_rating = float(snapshot.teacher_rating) if snapshot.teacher_rating is not None else 0
+        num_friends = int(snapshot.num_friends) if snapshot.num_friends is not None else 0
+        counseling_visits = int(snapshot.counseling_visits) if snapshot.counseling_visits is not None else 0
+        
         # Attendance risk (0-25 points)
-        if snapshot.attendance < 75:
+        if attendance < 75:
             risk_score_value += 25
             key_signals.append('🔴 Low attendance (<75%)')
-        elif snapshot.attendance < 85:
+        elif attendance < 85:
             risk_score_value += 15
             key_signals.append('🟡 Below average attendance')
         
         # Academic performance risk (0-30 points)
-        if snapshot.ias < 40:
+        if ias < 40:
             risk_score_value += 30
             key_signals.append('🔴 Critical academic performance')
-        elif snapshot.ias < 50:
+        elif ias < 50:
             risk_score_value += 25
             key_signals.append('🔴 Low internal assessment score')
-        elif snapshot.ias < 60:
+        elif ias < 60:
             risk_score_value += 15
             key_signals.append('🟡 Below average performance')
         
         # Teacher rating risk (0-20 points)
-        if snapshot.teacher_rating < 2:
+        if teacher_rating < 2:
             risk_score_value += 20
             key_signals.append('🔴 Low teacher rating')
-        elif snapshot.teacher_rating < 3:
+        elif teacher_rating < 3:
             risk_score_value += 10
             key_signals.append('🟡 Below average teacher rating')
         
         # Fee status risk (0-15 points)
-        if snapshot.fee_status == 'Overdue':
+        fee_status = str(snapshot.fee_status).strip() if snapshot.fee_status else ''
+        if 'Overdue' in fee_status:
             risk_score_value += 15
             key_signals.append('🔴 Overdue fee payment')
         
         # Social engagement risk (0-15 points)
-        if snapshot.num_friends < 2:
+        if num_friends < 2:
             risk_score_value += 15
             key_signals.append('🔴 Social isolation (<2 friends)')
-        elif snapshot.num_friends < 3:
+        elif num_friends < 3:
             risk_score_value += 8
             key_signals.append('🟡 Limited social connections')
         
         # Counseling frequency (0-10 points)
-        if snapshot.counseling_visits > 5:
+        if counseling_visits > 5:
             risk_score_value += 10
             key_signals.append('🟡 Frequent counseling visits')
         
         # Failed exam (0-5 points)
-        if snapshot.arr == 'Y':
+        arr = str(snapshot.arr).strip().upper() if snapshot.arr else 'N'
+        if arr == 'Y':
             risk_score_value += 5
             key_signals.append('🟡 Previous exam failure')
         
@@ -148,17 +166,23 @@ def _determine_pattern(snapshot):
     
     patterns = []
     
-    if snapshot.attendance < 80 and snapshot.ias < 60:
+    # Safely convert values
+    attendance = float(snapshot.attendance) if snapshot.attendance is not None else 0
+    ias = float(snapshot.ias) if snapshot.ias is not None else 0
+    teacher_rating = float(snapshot.teacher_rating) if snapshot.teacher_rating is not None else 0
+    num_friends = int(snapshot.num_friends) if snapshot.num_friends is not None else 0
+    
+    if attendance < 80 and ias < 60:
         patterns.append('Declining academic and attendance pattern')
-    elif snapshot.attendance > 90 and snapshot.ias > 75:
+    elif attendance > 90 and ias > 75:
         patterns.append('Strong engagement and academic performance')
-    elif snapshot.ias < 50:
+    elif ias < 50:
         patterns.append('Struggling academically')
-    elif snapshot.attendance < 75:
+    elif attendance < 75:
         patterns.append('Poor school attendance')
-    elif snapshot.num_friends < 2 and snapshot.ias < 60:
+    elif num_friends < 2 and ias < 60:
         patterns.append('Social isolation with academic struggles')
-    elif snapshot.teacher_rating < 2:
+    elif teacher_rating < 2:
         patterns.append('Behavioral concerns in classroom')
     
     return ' | '.join(patterns) if patterns else 'Stable engagement'
@@ -175,11 +199,15 @@ def _suggest_action(risk_level, snapshot):
         base_action = '✅ Continue regular monitoring'
     
     if snapshot:
-        if snapshot.attendance < 75:
+        attendance = float(snapshot.attendance) if snapshot.attendance is not None else 0
+        teacher_rating = float(snapshot.teacher_rating) if snapshot.teacher_rating is not None else 0
+        fee_status = str(snapshot.fee_status).strip() if snapshot.fee_status else ''
+        
+        if attendance < 75:
             base_action += ' | Implement attendance improvement plan'
-        if snapshot.fee_status == 'Overdue':
+        if 'Overdue' in fee_status:
             base_action += ' | Contact parents regarding fee payment'
-        if snapshot.teacher_rating < 2:
+        if teacher_rating < 2:
             base_action += ' | Behavioral intervention needed'
     
     return base_action

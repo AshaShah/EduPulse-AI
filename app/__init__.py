@@ -26,13 +26,15 @@ def create_app(config_name=None):
     from app.blueprints.upload import upload_bp
     from app.blueprints.analytics import analytics_bp
     from app.blueprints.api import api_bp
-    
+    from app.blueprints.settings import settings_bp
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(students_bp)
     app.register_blueprint(upload_bp)
     app.register_blueprint(analytics_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(settings_bp)
     
     # Create tables
     with app.app_context():
