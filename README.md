@@ -305,11 +305,11 @@ edupulse-ai/
 
 ##  Meet the Team 3
 
-- Alabhya Pahari
-- Arjun Pun Magar
-- Asha Shah
-- Sudip Bashyal
-- Sugam Parajuli
+- Alabhya Pahari: DB Admin + Research + ML
+- Arjun Pun Magar: Backend & QA Testing
+- Asha Shah (Lead): RAG/ML + Frontend
+- Sudip Bashyal: UI/UX + Frontend
+- Sugam Parajuli: Market Research + Backend
 
 ---
 
