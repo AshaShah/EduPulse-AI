@@ -1,0 +1,99 @@
+<div id="chatbot-widget" class="chatbot-widget">
+    <button id="chatbot-toggle" class="chatbot-toggle" onclick="toggleChatbot()" title="AI Assistant">
+        💬
+    </button>
+    
+    <div id="chatbot-panel" class="chatbot-panel" style="display:none;">
+        <div class="chatbot-header">
+            <div class="chatbot-header-title">
+                <h3>🤖 AI Assistant</h3>
+                <p>Ask about students or get guidance</p>
+            </div>
+            <button onclick="toggleChatbot()" class="close-btn">✕</button>
+        </div>
+        
+        <div id="chatbot-messages" class="chatbot-messages">
+            <div class="message ai-message">
+                <p>👋 Hi! I'm EduPulse AI Assistant.</p>
+                <p style="font-size: 12px; margin: 8px 0 0 0;">Try asking:</p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 12px;">
+                    <li>"Tell me about Aayush"</li>
+                    <li>"How to help struggling students?"</li>
+                    <li>"Mental health signs?"</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="chatbot-input-area">
+            <div class="chatbot-input">
+                <input 
+                    type="text" 
+                    id="chatbot-input" 
+                    placeholder="Ask me anything..." 
+                    onkeypress="handleChatInput(event)">
+                <button onclick="sendChatMessage()" class="send-btn" title="Send">
+                    ➤
+                </button>
+            </div>
+            <p class="chatbot-footer">Powered by Cohere AI</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleChatbot() {
+    const panel = document.getElementById('chatbot-panel');
+    const isVisible = panel.style.display === 'flex';
+    panel.style.display = isVisible ? 'none' : 'flex';
+}
+
+function handleChatInput(e) {
+    if (e.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatbot-input');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const messagesDiv = document.getElementById('chatbot-messages');
+    
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message user-message';
+    userMsg.innerHTML = `<p>${escapeHtml(message)}</p>`;
+    messagesDiv.appendChild(userMsg);
+    
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Get AI response
+    fetch('/api/chatbot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: message})
+    })
+    .then(r => r.json())
+    .then(data => {
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'message ai-message';
+        aiMsg.innerHTML = `<p>${escapeHtml(data.response)}</p>`;
+        messagesDiv.appendChild(aiMsg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    })
+    .catch(err => {
+        const errMsg = document.createElement('div');
+        errMsg.className = 'message error-message';
+        errMsg.innerHTML = `<p>❌ Error: ${err}</p>`;
+        messagesDiv.appendChild(errMsg);
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>

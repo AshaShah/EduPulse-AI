@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EduPulse AI{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <p>Overview of student performance and risk assessments</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card total-students">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+            <h3>Total Students</h3>
+            <p class="stat-value">{{ stats.total_students }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card high-risk">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-content">
+            <h3>High Risk</h3>
+            <p class="stat-value">{{ stats.high_risk_count }}</p>
+            <p class="stat-percentage">{{ stats.high_risk_percentage }}%</p>
+        </div>
+    </div>
+    
+    <div class="stat-card avg-attendance">
+        <div class="stat-icon">📍</div>
+        <div class="stat-content">
+            <h3>Avg Attendance</h3>
+            <p class="stat-value">{{ stats.avg_attendance }}%</p>
+        </div>
+    </div>
+    
+    <div class="stat-card avg-rating">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-content">
+            <h3>Avg Rating</h3>
+            <p class="stat-value">{{ stats.avg_rating }}/5.0</p>
+        </div>
+    </div>
+</div>
+
+<div class="at-risk-section">
+    <h2>Top At-Risk Students</h2>
+    
+    <div class="search-filter">
+        <input type="text" id="student-search" placeholder="Search students..." class="search-input">
+        <select id="risk-filter" class="filter-select">
+            <option value="all">All Risk Levels</option>
+            <option value="high">High Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="low">Low Risk</option>
+        </select>
+    </div>
+    
+    <table class="students-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Risk Level</th>
+                <th>Score</th>
+                <th>Pattern</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="students-list">
+            {% for student in students %}
+            <tr class="student-row" data-student-id="{{ student.id }}">
+                <td><strong>{{ student.name }}</strong></td>
+                <td>{{ student.grade }}</td>
+                <td>
+                    <span class="badge badge-{{ student.risk_level | lower }}">
+                        {{ student.risk_level }}
+                    </span>
+                </td>
+                <td>{{ student.risk_score }}</td>
+                <td>{{ student.pattern[:50] }}...</td>
+                <td>
+                    <a href="/student/{{ student.id }}" class="btn-small">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.getElementById('student-search').addEventListener('keyup', searchStudents);
+document.getElementById('risk-filter').addEventListener('change', searchStudents);
+
+function searchStudents() {
+    const query = document.getElementById('student-search').value;
+    const risk = document.getElementById('risk-filter').value;
+    
+    fetch(`/api/search-students?q=${query}&risk=${risk}`)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('students-list');
+            tbody.innerHTML = '';
+            
+            data.forEach(student => {
+                const riskClass = student.risk_level.toLowerCase();
+                const row = `
+                    <tr class="student-row">
+                        <td><strong>${student.name}</strong></td>
+                        <td>${student.grade}</td>
+                        <td><span class="badge badge-${riskClass}">${student.risk_level}</span></td>
+                        <td>${student.risk_score}</td>
+                        <td>${(student.pattern || 'N/A').substring(0, 50)}...</td>
+                        <td><a href="/student/${student.id}" class="btn-small">View</a></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        });
+}
+</script>
+{% endblock %}

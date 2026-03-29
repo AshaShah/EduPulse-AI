@@ -1,0 +1,40 @@
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <!-- Logo -->
+        <div class="logo-container">
+            <!-- <img src="../../static/images/logo.png" alt="EduPulse AI" class="logo" style="width: 120px; height: auto;"> -->
+            <div class="logo-text">
+                <h2>EduPulse</h2>
+                <p>AI</p>
+            </div>
+        </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+        <a href="/" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+            <span class="icon">📊</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="/analytics" class="nav-link {% if request.endpoint == 'analytics.analytics' %}active{% endif %}">
+            <span class="icon">📈</span>
+            <span>Analytics</span>
+        </a>
+        <a href="/upload" class="nav-link {% if request.endpoint == 'upload.upload_page' %}active{% endif %}">
+            <span class="icon">📤</span>
+            <span>Upload Data</span>
+        </a>
+        <a href="/data-management" class="nav-link {% if request.endpoint == 'upload.data_management' %}active{% endif %}">
+            <span class="icon">🗂️</span>
+            <span>Data Management</span>
+        </a>
+        <a href="#" class="nav-link">
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
+        </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <p>Logged in as <strong>{{ user_name }}</strong></p>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</aside>

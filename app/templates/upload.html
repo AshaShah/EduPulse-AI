@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Data - EduPulse AI{% endblock %}
+
+{% block content %}
+<div class="upload-header">
+    <h1>Upload Data</h1>
+    <p>Import student data and performance records</p>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('upload')">📤 Upload</button>
+    <button class="tab-btn" onclick="switchTab('template')">📋 Template</button>
+    <button class="tab-btn" onclick="switchTab('history')">📜 History</button>
+</div>
+
+<!-- Upload Tab -->
+<div id="upload" class="tab-content active">
+    <section class="card">
+        <h2>Upload CSV File</h2>
+        
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📁</div>
+            <h3>Drag & drop your file here</h3>
+            <p>or</p>
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                Select File
+            </button>
+            <input type="file" id="fileInput" accept=".csv" style="display:none;">
+            <p class="upload-info">Supported: CSV</p>
+        </div>
+        
+        <div id="uploadProgress" style="display:none;">
+            <div class="progress-bar">
+                <div id="progressFill"></div>
+            </div>
+            <p id="progressText">Uploading...</p>
+        </div>
+        
+        <div id="uploadResult" style="display:none;"></div>
+    </section>
+</div>
+
+<!-- Template Tab -->
+<div id="template" class="tab-content">
+    <section class="card">
+        <h2>Download Template</h2>
+        <p>Download the CSV template to ensure your data format is correct.</p>
+        <a href="/api/download-template" class="btn btn-primary">📥 Download Template</a>
+        
+        <h3 style="margin-top: 30px;">Column Descriptions</h3>
+        <table class="template-table">
+            <tr>
+                <td><strong>id</strong></td>
+                <td>Unique student ID</td>
+            </tr>
+            <tr>
+                <td><strong>name</strong></td>
+                <td>Student's full name</td>
+            </tr>
+            <tr>
+                <td><strong>address</strong></td>
+                <td>City/address</td>
+            </tr>
+            <tr>
+                <td><strong>email</strong></td>
+                <td>Student email</td>
+            </tr>
+            <tr>
+                <td><strong>grade</strong></td>
+                <td>Current grade (9-12)</td>
+            </tr>
+            <tr>
+                <td><strong>tt</strong></td>
+                <td>Travel time to school (hours)</td>
+            </tr>
+            <tr>
+                <td><strong>fo/mo</strong></td>
+                <td>Father's/Mother's occupation</td>
+            </tr>
+            <tr>
+                <td><strong>fq/mq</strong></td>
+                <td>Father's/Mother's education level</td>
+            </tr>
+            <tr>
+                <td><strong>ias</strong></td>
+                <td>Internal Assessment Score (0-100)</td>
+            </tr>
+            <tr>
+                <td><strong>attendance</strong></td>
+                <td>Attendance percentage</td>
+            </tr>
+            <tr>
+                <td><strong>fee_late</strong></td>
+                <td>Payment status (Paid/Overdue)</td>
+            </tr>
+            <tr>
+                <td><strong>teacher_rating</strong></td>
+                <td>Teacher's rating (1-5)</td>
+            </tr>
+            <tr>
+                <td><strong>nf</strong></td>
+                <td>Number of close friends</td>
+            </tr>
+            <tr>
+                <td><strong>previous_visits</strong></td>
+                <td>Counseling visits count</td>
+            </tr>
+        </table>
+    </section>
+</div>
+
+<!-- History Tab -->
+<div id="history" class="tab-content">
+    <section class="card">
+        <h2>Upload History</h2>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Uploaded By</th>
+                    <th>Records</th>
+                    <th>Success</th>
+                    <th>Errors</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for upload in history %}
+                <tr>
+                    <td>{{ upload.file_name }}</td>
+                    <td>{{ upload.uploaded_by }}</td>
+                    <td>{{ upload.record_count }}</td>
+                    <td><span class="badge badge-success">{{ upload.success_count }}</span></td>
+                    <td><span class="badge badge-danger">{{ upload.error_count }}</span></td>
+                    <td>{{ upload.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<script>
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length) handleFileUpload(files[0]);
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) handleFileUpload(e.target.files[0]);
+});
+
+function handleFileUpload(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadResult').style.display = 'none';
+    
+    fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadResult').style.display = 'block';
+        
+        if (data.success) {
+            document.getElementById('uploadResult').innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✓ Upload Successful!</strong>
+                    <p>${data.message}</p>
+                    <p>Processed: ${data.processed} | Failed: ${data.failed}</p>
+                </div>
+            `;
+        } else {
+            document.getElementById('uploadResult').innerHTML = `
+                <div class="alert alert-error">
+                    <strong>✗ Upload Failed</strong>
+                    <p>${data.error}</p>
+                </div>
+            `;
+        }
+    })
+    .catch(err => {
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadResult').innerHTML = `
+            <div class="alert alert-error">Error: ${err}</div>
+        `;
+    });
+}
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

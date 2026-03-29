@@ -1,0 +1,816 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.name }} - Student Profile{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/charts.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-900: #0f172a;
+  --danger: #ef4444;
+}
+
+.profile-header {
+    margin-bottom: 30px;
+}
+
+.profile-header h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    color: var(--slate-900);
+    font-weight: 700;
+}
+
+.profile-header p {
+    color: var(--slate-600);
+    font-size: 14px;
+    margin: 0;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--slate-200);
+    transition: all 0.3s;
+}
+
+.card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+    margin: 0 0 20px 0;
+    color: var(--slate-900);
+    font-size: 18px;
+    font-weight: 700;
+    border-bottom: 2px solid var(--slate-100);
+    padding-bottom: 12px;
+}
+
+.risk-card {
+    border-left: 5px solid var(--danger);
+}
+
+.risk-status {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.risk-status p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.risk-details {
+    margin-top: 20px;
+}
+
+.risk-details h3 {
+    margin: 15px 0 10px 0;
+    font-size: 14px;
+    color: var(--slate-700);
+    font-weight: 600;
+}
+
+.risk-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.risk-details li {
+    padding: 8px 0;
+    color: var(--slate-600);
+    border-bottom: 1px solid var(--slate-100);
+    font-size: 14px;
+}
+
+.risk-details li:last-child {
+    border-bottom: none;
+}
+
+.risk-details p {
+    color: var(--slate-600);
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    padding: 15px;
+    background: var(--slate-50);
+    border-radius: 8px;
+    border: 1px solid var(--slate-200);
+    transition: all 0.3s;
+}
+
+.info-item:hover {
+    border-color: var(--primary);
+    background: #f0f7ff;
+}
+
+.info-item label {
+    display: block;
+    font-weight: 600;
+    color: var(--slate-600);
+    font-size: 12px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item p {
+    font-size: 14px;
+    color: var(--slate-900);
+    margin: 0;
+    font-weight: 500;
+}
+
+.metrics-table {
+    margin-top: 15px;
+    overflow-x: auto;
+}
+
+.metrics-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.metrics-table tr {
+    border-bottom: 1px solid var(--slate-200);
+}
+
+.metrics-table tr:last-child {
+    border-bottom: none;
+}
+
+.metrics-table td {
+    padding: 12px 0;
+}
+
+.metrics-table td:first-child {
+    color: var(--slate-600);
+    font-weight: 500;
+}
+
+.metrics-table td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: var(--slate-900);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-high {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-low {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.teacher-notes {
+    background: var(--slate-50);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    color: var(--slate-700);
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.ai-insight-container {
+    background: var(--slate-50);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    line-height: 1.6;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.ai-insight-container p {
+    color: var(--slate-700);
+    font-size: 14px;
+    margin: 8px 0;
+}
+
+.ai-insight-container strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.ai-insight-container ul {
+    margin: 10px 0 10px 20px;
+    color: var(--slate-700);
+    padding: 0;
+}
+
+.ai-insight-container li {
+    margin: 6px 0;
+    font-size: 14px;
+}
+
+.ai-insight-container div {
+    margin: 6px 0;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
+.canvas-container {
+    position: relative;
+    height: 250px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-header h1 {
+        font-size: 24px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .card h2 {
+        font-size: 16px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-table table {
+        font-size: 13px;
+    }
+
+    .metrics-table td {
+        padding: 10px 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <h1>{{ student.name }}</h1>
+    <p>📚 Grade {{ student.grade }} | 🆔 ID: {{ student.id }} | 📍 {{ student.address or 'Address N/A' }}</p>
+</div>
+
+<div class="profile-grid">
+    <!-- Student Info -->
+    <section class="card">
+        <h2>📋 Student Information</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>📍 Address</label>
+                <p>{{ student.address or 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+                <label>📧 Email</label>
+                <p>{{ student.email or 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+                <label>🚌 Travel Time</label>
+                <p>{{ student.travel_time or 'N/A' }} hrs</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Family Background -->
+    <section class="card">
+        <h2>👨‍👩‍👧 Family Background</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>👨 Father's Job</label>
+                <p>{{ student.father_occupation or 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+                <label>🎓 Father's Education</label>
+                <p>{{ student.father_education or 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+                <label>👩 Mother's Job</label>
+                <p>{{ student.mother_occupation or 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+                <label>🎓 Mother's Education</label>
+                <p>{{ student.mother_education or 'N/A' }}</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Risk Assessment -->
+    <section class="card risk-card full-width">
+        <h2>⚠️ Risk Assessment</h2>
+        {% if student.risk_level %}
+            <div class="risk-status">
+                <span class="badge badge-{{ student.risk_level | lower }}">
+                    {{ student.risk_level }} RISK
+                </span>
+                <p>Score: <strong>{{ student.risk_score }}/100</strong></p>
+            </div>
+            <div class="risk-details">
+                <h3>🚨 Key Signals:</h3>
+                <ul>
+                    {% for signal in student.key_signals %}
+                        <li>{{ signal }}</li>
+                    {% else %}
+                        <li>✅ No warning signals detected</li>
+                    {% endfor %}
+                </ul>
+                <h3 style="margin-top: 20px;">📊 Pattern:</h3>
+                <p>{{ student.pattern or 'No pattern detected' }}</p>
+                <h3 style="margin-top: 20px;">✏️ Recommended Action:</h3>
+                <p>{{ student.counselor_action or 'Monitor performance' }}</p>
+            </div>
+        {% else %}
+            <p>⏳ No risk assessment available yet</p>
+        {% endif %}
+    </section>
+
+    <!-- Academic Performance Chart -->
+    <section class="card">
+        <h2>📚 Academic Performance</h2>
+        <div class="canvas-container">
+            <canvas id="academicChart"></canvas>
+        </div>
+        <div class="metrics-table">
+            <table>
+                <tr>
+                    <td><strong>Internal Assessment Score (IAS)</strong></td>
+                    <td><strong>{{ student.ias or 0 }}/100</strong></td>
+                </tr>
+                <tr>
+                    <td>Previous Grade (TWP)</td>
+                    <td>{{ student.twp or 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <td>Two Grades Ago (TNP)</td>
+                    <td>{{ student.tnp or 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <td>Exam Failure</td>
+                    <td>
+                        {% if student.arr == 'Y' %}
+                            <span class="badge badge-danger">Yes ❌</span>
+                        {% else %}
+                            <span class="badge badge-success">No ✅</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Attendance Chart -->
+    <section class="card">
+        <h2>📍 Attendance & Finance</h2>
+        <div class="canvas-container">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+        <div class="metrics-table">
+            <table>
+                <tr>
+                    <td><strong>Attendance Rate</strong></td>
+                    <td>
+                        <strong>{{ student.attendance or 0 }}%</strong>
+                        {% if student.attendance >= 90 %}
+                            <span style="color: #10b981; margin-left: 8px;">✅ Excellent</span>
+                        {% elif student.attendance >= 75 %}
+                            <span style="color: #f59e0b; margin-left: 8px;">👍 Good</span>
+                        {% elif student.attendance >= 60 %}
+                            <span style="color: #f59e0b; margin-left: 8px;">⚠️ Fair</span>
+                        {% else %}
+                            <span style="color: #ef4444; margin-left: 8px;">🚨 Critical</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Fee Status</td>
+                    <td>
+                        <span class="badge badge-{{ 'danger' if student.fee_status == 'Overdue' else 'success' }}">
+                            {% if student.fee_status == 'Overdue' %}
+                                ⚠️ {{ student.fee_status }}
+                            {% else %}
+                                ✅ {{ student.fee_status or 'Unknown' }}
+                            {% endif %}
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Engagement & Wellbeing -->
+    <section class="card">
+        <h2>💬 Engagement & Wellbeing</h2>
+        <div class="canvas-container">
+            <canvas id="engagementChart"></canvas>
+        </div>
+        <div class="metrics-table">
+            <table>
+                <tr>
+                    <td><strong>Teacher Rating</strong></td>
+                    <td>
+                        <strong>{{ student.teacher_rating or 0 }}/5.0</strong>
+                        <span style="margin-left: 8px;">
+                            {% if student.teacher_rating >= 4 %}
+                                ⭐⭐⭐⭐⭐
+                            {% elif student.teacher_rating >= 3 %}
+                                ⭐⭐⭐⭐
+                            {% elif student.teacher_rating >= 2 %}
+                                ⭐⭐⭐
+                            {% elif student.teacher_rating >= 1 %}
+                                ⭐⭐
+                            {% else %}
+                                ⭐
+                            {% endif %}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>👥 Close Friends</td>
+                    <td>{{ student.num_friends or 0 }}</td>
+                </tr>
+                <tr>
+                    <td>💬 Counseling Visits</td>
+                    <td>{{ student.counseling_visits or 0 }}</td>
+                </tr>
+                <tr>
+                    <td>🧠 Mental Health</td>
+                    <td>{{ student.mental_health_summary or 'No summary' }}</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Teacher Notes -->
+    <section class="card full-width">
+        <h2>📝 Teacher Notes</h2>
+        <div class="teacher-notes">
+            {{ student.teacher_notes or '✅ No notes available' }}
+        </div>
+    </section>
+
+    <!-- AI Insight -->
+    <section class="card full-width">
+        <h2>🤖 AI Insights</h2>
+        <button class="btn btn-primary" id="btn-ai-insight" data-student-id="{{ student.id }}">
+            🔍 Generate AI Insight
+        </button>
+        <div id="ai-insight" class="ai-insight-container" style="margin-top: 20px; display: none;"></div>
+    </section>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let academicChart = null;
+let attendanceChart = null;
+let engagementChart = null;
+
+// Initialize charts when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        drawAcademicChart();
+        drawAttendanceChart();
+        drawEngagementChart();
+    } catch (e) {
+        console.error('Error initializing charts:', e);
+    }
+});
+
+function drawAcademicChart() {
+    const ctx = document.getElementById('academicChart');
+    if (!ctx) return;
+    
+    const ias = parseFloat('{{ student.ias or 0 }}') || 0;
+    const twp = parseFloat('{{ student.twp or 0 }}') || 0;
+    const tnp = parseFloat('{{ student.tnp or 0 }}') || 0;
+    
+    if (academicChart) {
+        academicChart.destroy();
+    }
+    
+    academicChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Current (IAS)', 'Previous (TWP)', 'Two Ago (TNP)'],
+            datasets: [{
+                label: 'Score (out of 100)',
+                data: [ias, twp, tnp],
+                backgroundColor: [
+                    'rgba(37, 99, 235, 0.8)',
+                    'rgba(59, 130, 246, 0.6)',
+                    'rgba(147, 197, 253, 0.5)'
+                ],
+                borderColor: [
+                    '#2563eb',
+                    '#3b82f6',
+                    '#93c5fd'
+                ],
+                borderWidth: 2,
+                borderRadius: 8,
+                hoverBackgroundColor: '#2563eb'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { 
+                    display: true,
+                    labels: {
+                        font: { size: 13 }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        font: { size: 12 }
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: { size: 12 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function drawAttendanceChart() {
+    const ctx = document.getElementById('attendanceChart');
+    if (!ctx) return;
+    
+    const attendance = parseFloat('{{ student.attendance or 0 }}') || 0;
+    const absent = Math.max(0, 100 - attendance);
+    
+    if (attendanceChart) {
+        attendanceChart.destroy();
+    }
+    
+    attendanceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [`Present (${attendance}%)`, `Absent (${absent}%)`],
+            datasets: [{
+                data: [attendance, absent],
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(229, 231, 235, 0.5)'
+                ],
+                borderColor: [
+                    '#10b981',
+                    '#e5e7eb'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { size: 12 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function drawEngagementChart() {
+    const ctx = document.getElementById('engagementChart');
+    if (!ctx) return;
+    
+    const rating = parseFloat('{{ student.teacher_rating or 0 }}') || 0;
+    const friends = parseFloat('{{ student.num_friends or 0 }}') || 0;
+    const visits = parseFloat('{{ student.counseling_visits or 0 }}') || 0;
+    
+    if (engagementChart) {
+        engagementChart.destroy();
+    }
+    
+    engagementChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Teacher Rating (/5)', 'Close Friends (/10)', 'Counseling Visits'],
+            datasets: [{
+                label: 'Engagement Metrics',
+                data: [rating, friends, visits],
+                fill: true,
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                borderColor: '#2563eb',
+                pointBackgroundColor: '#2563eb',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#2563eb',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    display: true,
+                    labels: {
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// AI Insight Loading
+const aiBtn = document.getElementById('btn-ai-insight');
+if (aiBtn) {
+    aiBtn.addEventListener('click', function() {
+        const studentId = this.dataset.studentId;
+        loadAIInsight(studentId);
+    });
+}
+
+function loadAIInsight(studentId) {
+    const btn = document.getElementById('btn-ai-insight');
+    const insightDiv = document.getElementById('ai-insight');
+    const originalText = btn.textContent;
+    
+    btn.textContent = '⏳ Loading...';
+    btn.disabled = true;
+    insightDiv.style.display = 'none';
+    
+    fetch(`/api/student/${studentId}/ai-insight`)
+        .then(r => {
+            if (!r.ok) {
+                throw new Error(`HTTP Error ${r.status}`);
+            }
+            return r.json();
+        })
+        .then(data => {
+            if (data.analysis && Array.isArray(data.analysis)) {
+                let html = '';
+                data.analysis.forEach(item => {
+                    if (item.startsWith('**') && item.endsWith('**')) {
+                        const content = item.replace(/\*\*/g, '');
+                        html += `<p style="font-weight: 700; color: #2563eb; margin-top: 12px; margin-bottom: 6px;">${escapeHtml(content)}</p>`;
+                    } else if (item.startsWith('  •') || item.startsWith('  -')) {
+                        const content = item.replace(/^  [-•]\s*/, '');
+                        html += `<div style="margin-left: 16px; margin-top: 4px;">• ${escapeHtml(content)}</div>`;
+                    } else if (item.startsWith('  ')) {
+                        html += `<div style="margin-left: 16px; margin-top: 4px; font-size: 13px;">${escapeHtml(item)}</div>`;
+                    } else if (item.includes('===') || item.trim() === '') {
+                        html += '<div style="height: 8px;"></div>';
+                    } else {
+                        html += `<p style="margin-top: 6px; color: #334155;">${escapeHtml(item)}</p>`;
+                    }
+                });
+                insightDiv.innerHTML = html;
+                insightDiv.style.display = 'block';
+            } else if (data.analysis) {
+                insightDiv.innerHTML = `<p>${escapeHtml(JSON.stringify(data.analysis))}</p>`;
+                insightDiv.style.display = 'block';
+            } else {
+                insightDiv.innerHTML = '<p style="color: #ef4444;">❌ No analysis available</p>';
+                insightDiv.style.display = 'block';
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            insightDiv.innerHTML = `<p style="color: #ef4444;">❌ Error: ${escapeHtml(err.message)}</p>`;
+            insightDiv.style.display = 'block';
+        })
+        .finally(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Handle chart resize on window resize
+window.addEventListener('resize', function() {
+    if (academicChart) academicChart.resize();
+    if (attendanceChart) attendanceChart.resize();
+    if (engagementChart) engagementChart.resize();
+});
+</script>
+{% endblock %}
