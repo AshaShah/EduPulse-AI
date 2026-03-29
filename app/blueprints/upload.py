@@ -42,7 +42,6 @@ def upload_csv():
         if not file.filename.endswith('.csv'):
             return jsonify({'error': 'Only CSV files allowed', 'success': False}), 400
         
-        # Read CSV
         try:
             df = pd.read_csv(file)
         except Exception as e:
@@ -51,7 +50,6 @@ def upload_csv():
         if df.empty:
             return jsonify({'error': 'CSV file is empty', 'success': False}), 400
         
-        # Validate required columns
         required_cols = ['id', 'name']
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
@@ -60,18 +58,15 @@ def upload_csv():
                 'success': False
             }), 400
         
-        # Debug: Print column names
         print(f"CSV Columns: {list(df.columns)}")
         print(f"First row:\n{df.iloc[0]}")
         
-        # Track statistics
         new_count = 0
         updated_count = 0
         error_count = 0
         error_list = []
         total_records = len(df)
         
-        # Process each row
         for idx, row in df.iterrows():
             try:
                 # ===== STEP 1: Validate student ID =====
@@ -86,7 +81,6 @@ def upload_csv():
                 student = Student.query.get(student_id)
                 
                 if not student:
-                    # CREATE new student
                     student = Student(
                         id=student_id,
                         name=str(row.get('name', 'Unknown')).strip(),
@@ -102,9 +96,7 @@ def upload_csv():
                     db.session.add(student)
                     db.session.flush()
                     new_count += 1
-                
                 else:
-                    # UPDATE existing student
                     if pd.notna(row.get('name')):
                         student.name = str(row['name']).strip()
                     if pd.notna(row.get('address')):
@@ -121,13 +113,11 @@ def upload_csv():
                             student.travel_time = float(row['tt'])
                         except (ValueError, TypeError):
                             pass
-                    
                     updated_count += 1
                 
                 db.session.flush()
                 
                 # ===== STEP 3: Create snapshot =====
-                # Handle different column names for attendance
                 attendance_col = None
                 if 'attendance' in df.columns:
                     attendance_col = 'attendance'
@@ -165,11 +155,12 @@ def upload_csv():
                 try:
                     risk_data = calculate_risk_score(snapshot)
                     
+                    # ✅ CORRECT: Use key_signals column
                     risk_score = RiskScore(
                         student_id=student.id,
                         risk_score=risk_data['risk_score'],
                         risk_level=risk_data['risk_level'],
-                        signals=json.dumps(risk_data.get('signals', [])),
+                        key_signals=json.dumps(risk_data.get('signals', [])),
                         pattern=risk_data.get('pattern', ''),
                         notes=risk_data.get('notes', ''),
                         scored_at=datetime.now()
@@ -177,8 +168,8 @@ def upload_csv():
                     db.session.add(risk_score)
                 except Exception as risk_error:
                     print(f"Risk calculation error for row {idx + 1}: {risk_error}")
-                    # Continue without risk score if calculation fails
-                    pass
+                    import traceback
+                    traceback.print_exc()
                 
                 db.session.commit()
             
@@ -197,8 +188,8 @@ def upload_csv():
                 record_count=total_records,
                 success_count=new_count + updated_count,
                 error_count=error_count,
-                new_students=new_count,
-                updated_students=updated_count,
+                new_students=new_count,              # ✅ NOW VALID
+                updated_students=updated_count,      # ✅ NOW VALID
                 errors=json.dumps(error_list[:10]) if error_list else None,
                 uploaded_at=datetime.now()
             )
@@ -206,16 +197,17 @@ def upload_csv():
             db.session.commit()
         except Exception as e:
             print(f"Error logging upload: {e}")
+            import traceback
+            traceback.print_exc()
         
-        # Return success/error response
         if error_count > 0:
             return jsonify({
-                'success': error_count < total_records,  # Success if some processed
+                'success': error_count < total_records,
                 'message': f'Processed {new_count + updated_count}/{total_records} records with {error_count} errors',
                 'new_students': new_count,
                 'updated_students': updated_count,
                 'errors': error_count,
-                'error_details': error_list[:10]  # Show first 10 errors
+                'error_details': error_list[:10]
             })
         else:
             return jsonify({
@@ -246,7 +238,6 @@ def delete_student(student_id):
         
         student_name = student.name
         
-        # Delete cascades should handle this, but be explicit
         StudentDataSnapshot.query.filter_by(student_id=student_id).delete()
         RiskScore.query.filter_by(student_id=student_id).delete()
         db.session.delete(student)
@@ -267,10 +258,8 @@ def delete_student(student_id):
 def delete_all_data():
     """Delete ALL student data"""
     try:
-        # Get count before deletion
         count = Student.query.count()
         
-        # Delete in order
         StudentDataSnapshot.query.delete()
         RiskScore.query.delete()
         Student.query.delete()
@@ -291,11 +280,9 @@ def delete_all_data():
 def delete_all_data_extended():
     """Delete ALL data including upload history"""
     try:
-        # Get counts
         student_count = Student.query.count()
         upload_count = UploadHistory.query.count()
         
-        # Delete everything
         UploadHistory.query.delete()
         StudentDataSnapshot.query.delete()
         RiskScore.query.delete()
@@ -331,7 +318,6 @@ def data_management():
 def download_template():
     """Download CSV template"""
     
-    # Create template
     template_data = {
         'id': [1, 2, 3, 4, 5],
         'name': ['Aayush Sharma', 'Priya Singh', 'Rohan Patel', 'Meera Verma', 'Arjun Kumar'],

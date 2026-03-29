@@ -10,15 +10,15 @@
 
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab(event, 'upload')">
-        <span class="tab-icon"></span>
+        <span class="tab-icon">📤</span>
         <span>Upload</span>
     </button>
     <button class="tab-btn" onclick="switchTab(event, 'template')">
-        <span class="tab-icon"></span>
+        <span class="tab-icon">📋</span>
         <span>Template</span>
     </button>
     <button class="tab-btn" onclick="switchTab(event, 'history')">
-        <span class="tab-icon"></span>
+        <span class="tab-icon">📜</span>
         <span>History</span>
     </button>
 </div>
@@ -242,7 +242,7 @@
             </div>
         {% else %}
             <div class="empty-state">
-                <p> No upload history yet</p>
+                <p>No upload history yet</p>
             </div>
         {% endif %}
     </section>
@@ -252,10 +252,7 @@
 
 {% block extra_css %}
 <style>
-/* ===================================
-   Upload Header
-   =================================== */
-
+/* Upload Header */
 .upload-header {
     margin-bottom: 32px;
 }
@@ -273,10 +270,7 @@
     margin: 0;
 }
 
-/* ===================================
-   Tabs
-   =================================== */
-
+/* Tabs */
 .tabs {
     display: flex;
     gap: 0;
@@ -341,10 +335,7 @@
     }
 }
 
-/* ===================================
-   Card
-   =================================== */
-
+/* Card */
 .card {
     background: white;
     padding: 24px;
@@ -373,10 +364,7 @@
     font-size: 13px;
 }
 
-/* ===================================
-   Upload Zone
-   =================================== */
-
+/* Upload Zone */
 .upload-zone {
     border: 2px dashed #d1d5db;
     border-radius: 12px;
@@ -434,10 +422,7 @@
     font-size: 12px;
 }
 
-/* ===================================
-   Progress
-   =================================== */
-
+/* Progress */
 .upload-progress {
     margin-top: 20px;
     padding: 20px;
@@ -474,10 +459,7 @@
     margin: 0;
 }
 
-/* ===================================
-   Upload Result
-   =================================== */
-
+/* Upload Result */
 .alert {
     padding: 16px;
     border-radius: 8px;
@@ -522,10 +504,7 @@
     line-height: 1.5;
 }
 
-/* ===================================
-   Template Section
-   =================================== */
-
+/* Template Section */
 .template-section {
     margin-bottom: 32px;
     padding-bottom: 24px;
@@ -549,10 +528,7 @@
     margin: 0 0 12px 0;
 }
 
-/* ===================================
-   Columns Grid
-   =================================== */
-
+/* Columns Grid */
 .columns-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -606,10 +582,7 @@
     width: 70%;
 }
 
-/* ===================================
-   Template Tips
-   =================================== */
-
+/* Template Tips */
 .template-tips {
     background: #fffbeb;
     border: 1px solid #fde047;
@@ -646,10 +619,7 @@
     font-weight: bold;
 }
 
-/* ===================================
-   History Table
-   =================================== */
-
+/* History Table */
 .table-container {
     overflow-x: auto;
 }
@@ -693,10 +663,7 @@
     color: #6b7280;
 }
 
-/* ===================================
-   Badges
-   =================================== */
-
+/* Badges */
 .badge {
     display: inline-block;
     padding: 4px 8px;
@@ -716,10 +683,7 @@
     background: #ef4444;
 }
 
-/* ===================================
-   Empty State
-   =================================== */
-
+/* Empty State */
 .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -731,10 +695,7 @@
     margin: 0;
 }
 
-/* ===================================
-   Buttons
-   =================================== */
-
+/* Buttons */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -760,10 +721,7 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-/* ===================================
-   Responsive
-   =================================== */
-
+/* Responsive */
 @media (max-width: 768px) {
     .tabs {
         overflow-x: auto;
@@ -822,7 +780,6 @@
 const uploadZone = document.getElementById('uploadZone');
 const fileInput = document.getElementById('fileInput');
 
-// Drag and drop events
 uploadZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadZone.classList.add('dragover');
@@ -844,13 +801,11 @@ fileInput.addEventListener('change', (e) => {
 });
 
 function handleFileUpload(file) {
-    // Validate file type
     if (!file.name.endsWith('.csv')) {
         showResult('error', 'Please upload a CSV file', '');
         return;
     }
 
-    // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
         showResult('error', 'File is too large', 'Maximum file size is 10MB');
         return;
@@ -870,15 +825,32 @@ function handleFileUpload(file) {
     .then(data => {
         document.getElementById('uploadProgress').style.display = 'none';
         
-        if (data.success) {
+        if (data.success || data.new_students + data.updated_students > 0) {
+            let errorDetails = '';
+            if (data.error_details && data.error_details.length > 0) {
+                errorDetails = '<br><br><strong>Errors:</strong><br>' + 
+                    data.error_details.map(err => `• ${err}`).join('<br>');
+            }
+            
             showResult('success', 
-                '✓ Upload Successful!',
-                `${data.message}<br>New: ${data.new_students} | Updated: ${data.updated_students} | Errors: ${data.errors}`
+                'Upload Completed!',
+                `${data.message}<br><br>
+                <strong>Summary:</strong><br>
+                New Students: <strong>${data.new_students}</strong><br>
+                Updated Students: <strong>${data.updated_students}</strong><br>
+                Errors: <strong>${data.errors}</strong>
+                ${errorDetails}`
             );
         } else {
+            let errorDetails = '';
+            if (data.error_details && data.error_details.length > 0) {
+                errorDetails = '<br><br><strong>Error Details:</strong><br>' + 
+                    data.error_details.map(err => `• ${err}`).join('<br>');
+            }
+            
             showResult('error', 
-                '✗ Upload Failed',
-                data.error || 'An error occurred during upload'
+                'Upload Failed',
+                (data.error || data.message || 'An error occurred') + errorDetails
             );
         }
     })
@@ -904,17 +876,14 @@ function showResult(type, title, message) {
 function switchTab(event, tabName) {
     event.preventDefault();
     
-    // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(el => {
         el.style.display = 'none';
     });
     
-    // Remove active from all buttons
     document.querySelectorAll('.tab-btn').forEach(el => {
         el.classList.remove('active');
     });
     
-    // Show selected tab
     document.getElementById(tabName).style.display = 'block';
     event.target.closest('.tab-btn').classList.add('active');
 }

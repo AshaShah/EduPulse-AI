@@ -50,10 +50,10 @@ class StudentDataSnapshot(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False, index=True)
     
     # Academic Performance
-    ias = db.Column(db.Float, default=0)  # Internal Assessment Score
-    twp = db.Column(db.Float, default=0)  # Total Weighted % (previous grade)
-    tnp = db.Column(db.Float, default=0)  # Total Weighted % (two grades ago)
-    arr = db.Column(db.String(1), default='N')  # Failed exam Y/N
+    ias = db.Column(db.Float, default=0)
+    twp = db.Column(db.Float, default=0)
+    tnp = db.Column(db.Float, default=0)
+    arr = db.Column(db.String(1), default='N')
     
     # Attendance & Finance
     attendance = db.Column(db.Float, default=0)
@@ -98,10 +98,11 @@ class RiskScore(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False, index=True)
     
     risk_score = db.Column(db.Float, default=0)
-    risk_level = db.Column(db.String(50), default='LOW')  # HIGH, MEDIUM, LOW
+    risk_level = db.Column(db.String(50), default='LOW')
     pattern = db.Column(db.Text)
     key_signals = db.Column(db.Text, default='[]')
     counselor_action = db.Column(db.Text)
+    notes = db.Column(db.Text)  # ✅ ADD THIS COLUMN
     
     scored_at = db.Column(db.DateTime, default=datetime.now, index=True)
     
@@ -124,6 +125,8 @@ class UploadHistory(db.Model):
     record_count = db.Column(db.Integer, default=0)
     success_count = db.Column(db.Integer, default=0)
     error_count = db.Column(db.Integer, default=0)
+    new_students = db.Column(db.Integer, default=0)          # ✅ ADD THIS COLUMN
+    updated_students = db.Column(db.Integer, default=0)      # ✅ ADD THIS COLUMN
     errors = db.Column(db.Text)
     uploaded_at = db.Column(db.DateTime, default=datetime.now, index=True)
     
